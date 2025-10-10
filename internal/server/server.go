@@ -87,7 +87,7 @@ func (s *Server) SetupRoutes() {
 // Start starts the HTTP server listening on the configured address.
 func (s *Server) Start() error {
 	address := s.cfg.App.Address()
-	logger.Log.Infof("Starting server on %s", address)
+	logger.New().Infof("Starting server on %s", address)
 
 	if err := s.app.Listen(address); err != nil {
 		return fmt.Errorf("server error: %w", err)
@@ -98,16 +98,17 @@ func (s *Server) Start() error {
 
 // Shutdown gracefully shuts down the server with timeout.
 func (s *Server) Shutdown(ctx context.Context) error {
-	logger.Log.Info("Shutting down server...")
+	logger.New().Info("Shutting down server...")
 
-	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	const shutdownTimeout = 10 * time.Second
+	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
 	if err := s.app.ShutdownWithContext(shutdownCtx); err != nil {
 		return fmt.Errorf("server shutdown error: %w", err)
 	}
 
-	logger.Log.Info("Server stopped successfully")
+	logger.New().Info("Server stopped successfully")
 	return nil
 }
 

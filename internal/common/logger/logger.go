@@ -11,13 +11,18 @@ type CustomFormatter struct {
 	logrus.TextFormatter
 }
 
-// Log is the global logger instance.
-var Log *logrus.Logger
+// Logger wraps a logrus.Logger instance.
+type Logger struct {
+	*logrus.Logger
+}
 
-func init() {
-	Log = logrus.New()
+// New creates a new configured logger instance.
+func New() *Logger {
+	logger := &Logger{
+		Logger: logrus.New(),
+	}
 
-	Log.SetFormatter(&CustomFormatter{
+	logger.SetFormatter(&CustomFormatter{
 		TextFormatter: logrus.TextFormatter{
 			TimestampFormat: "15:04:05.000",
 			FullTimestamp:   true,
@@ -25,10 +30,11 @@ func init() {
 		},
 	})
 
-	Log.SetOutput(os.Stdout)
+	logger.SetOutput(os.Stdout)
+	return logger
 }
 
-// GetLogger returns the global logger instance.
-func GetLogger() *logrus.Logger {
-	return Log
+// GetLogger returns a new logger instance.
+func GetLogger() *Logger {
+	return New()
 }

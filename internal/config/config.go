@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -152,10 +153,10 @@ func loadConfigFile() error {
 		viper.SetConfigFile(path + ".env")
 
 		if err := viper.ReadInConfig(); err == nil {
-			logger.Log.Infof("Config file loaded from %s", path)
+			logger.New().Infof("Config file loaded from %s", path)
 			return nil
 		}
 	}
 
-	return fmt.Errorf("no config file found")
+	return errors.New("no config file found")
 }

@@ -16,6 +16,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	// OAuthStateCookieMaxAge is the maximum age for OAuth state cookie in seconds..
+	OAuthStateCookieMaxAge = 30
+)
+
 // Handler handles authentication HTTP requests.
 type Handler struct {
 	authService  Service
@@ -39,6 +44,8 @@ func NewHandler(
 	}
 }
 
+// Register handles user registration.
+//
 // @Tags         Auth
 // @Summary      Register as user
 // @Accept       json
@@ -46,7 +53,7 @@ func NewHandler(
 // @Param        request  body  RegisterRequest  true  "Request body"
 // @Router       /auth/register [post]
 // @Success      201  {object}  RegisterResponse
-// @Failure      409  {object}  errors.ErrorResponse  "Email already taken"
+// @Failure      409  {object}  errors.ErrorResponse  "Email already taken".
 func (h *Handler) Register(c *fiber.Ctx) error {
 	req := new(RegisterRequest)
 
@@ -74,6 +81,8 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 		})
 }
 
+// Login handles user authentication.
+//
 // @Tags         Auth
 // @Summary      Login
 // @Accept       json
@@ -81,7 +90,7 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 // @Param        request  body  LoginRequest  true  "Request body"
 // @Router       /auth/login [post]
 // @Success      200  {object}  LoginResponse
-// @Failure      401  {object}  errors.ErrorResponse  "Invalid email or password"
+// @Failure      401  {object}  errors.ErrorResponse  "Invalid email or password".
 func (h *Handler) Login(c *fiber.Ctx) error {
 	req := new(LoginRequest)
 
@@ -109,6 +118,8 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		})
 }
 
+// Logout handles user logout.
+//
 // @Tags         Auth
 // @Summary      Logout
 // @Accept       json
@@ -116,7 +127,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 // @Param        request  body  LogoutRequest  true  "Request body"
 // @Router       /auth/logout [post]
 // @Success      200  {object}  httputil.Common
-// @Failure      404  {object}  errors.ErrorResponse  "Not found"
+// @Failure      404  {object}  errors.ErrorResponse  "Not found".
 func (h *Handler) Logout(c *fiber.Ctx) error {
 	req := new(LogoutRequest)
 
@@ -136,6 +147,8 @@ func (h *Handler) Logout(c *fiber.Ctx) error {
 		})
 }
 
+// RefreshTokens handles token refresh.
+//
 // @Tags         Auth
 // @Summary      Refresh auth tokens
 // @Accept       json
@@ -143,7 +156,7 @@ func (h *Handler) Logout(c *fiber.Ctx) error {
 // @Param        request  body  RefreshTokenRequest  true  "Request body"
 // @Router       /auth/refresh-tokens [post]
 // @Success      200  {object}  RefreshTokenResponse
-// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized"
+// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized".
 func (h *Handler) RefreshTokens(c *fiber.Ctx) error {
 	req := new(RefreshTokenRequest)
 
@@ -164,6 +177,8 @@ func (h *Handler) RefreshTokens(c *fiber.Ctx) error {
 		})
 }
 
+// ForgotPassword handles password reset request.
+//
 // @Tags         Auth
 // @Summary      Forgot password
 // @Description  An email will be sent to reset password.
@@ -172,7 +187,7 @@ func (h *Handler) RefreshTokens(c *fiber.Ctx) error {
 // @Param        request  body  ForgotPasswordRequest  true  "Request body"
 // @Router       /auth/forgot-password [post]
 // @Success      200  {object}  httputil.Common
-// @Failure      404  {object}  errors.ErrorResponse  "Not found"
+// @Failure      404  {object}  errors.ErrorResponse  "Not found".
 func (h *Handler) ForgotPassword(c *fiber.Ctx) error {
 	req := new(ForgotPasswordRequest)
 
@@ -197,6 +212,8 @@ func (h *Handler) ForgotPassword(c *fiber.Ctx) error {
 		})
 }
 
+// ResetPassword handles password reset.
+//
 // @Tags         Auth
 // @Summary      Reset password
 // @Accept       json
@@ -205,7 +222,7 @@ func (h *Handler) ForgotPassword(c *fiber.Ctx) error {
 // @Param        request  body  user.UpdateUserPasswordRequest  true  "Request body"
 // @Router       /auth/reset-password [post]
 // @Success      200  {object}  httputil.Common
-// @Failure      401  {object}  errors.ErrorResponse  "Password reset failed"
+// @Failure      401  {object}  errors.ErrorResponse  "Password reset failed".
 func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 	req := new(user.UpdateUserPasswordRequest)
 	query := &ResetPasswordRequest{
@@ -228,6 +245,8 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 		})
 }
 
+// SendVerificationEmail handles sending verification email.
+//
 // @Tags         Auth
 // @Summary      Send verification email
 // @Description  An email will be sent to verify email.
@@ -235,7 +254,7 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 // @Produce      json
 // @Router       /auth/send-verification-email [post]
 // @Success      200  {object}  httputil.Common
-// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized"
+// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized".
 func (h *Handler) SendVerificationEmail(c *fiber.Ctx) error {
 	userObj, ok := c.Locals("user").(*user.User)
 	if !ok {
@@ -259,13 +278,15 @@ func (h *Handler) SendVerificationEmail(c *fiber.Ctx) error {
 		})
 }
 
+// VerifyEmail handles email verification.
+//
 // @Tags         Auth
 // @Summary      Verify email
 // @Produce      json
 // @Param        token   query  string  true  "The verify email token"
 // @Router       /auth/verify-email [post]
 // @Success      200  {object}  httputil.Common
-// @Failure      401  {object}  errors.ErrorResponse  "Verify email failed"
+// @Failure      401  {object}  errors.ErrorResponse  "Verify email failed".
 func (h *Handler) VerifyEmail(c *fiber.Ctx) error {
 	query := &ResetPasswordRequest{
 		Token: c.Query("token"),
@@ -283,11 +304,14 @@ func (h *Handler) VerifyEmail(c *fiber.Ctx) error {
 		})
 }
 
+// GoogleLogin handles Google OAuth login.
+//
 // @Tags         Auth
 // @Summary      Login with google
 // @Description  This route initiates the Google OAuth2 login flow. Please try this in your browser.
 // @Router       /auth/google [get]
 // @Success      200  {object}  LoginResponse
+// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized".
 func (h *Handler) GoogleLogin(c *fiber.Ctx) error {
 	// Generate a random state
 	state := uuid.New().String()
@@ -295,7 +319,7 @@ func (h *Handler) GoogleLogin(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
 		Name:   "oauth_state",
 		Value:  state,
-		MaxAge: 30,
+		MaxAge: OAuthStateCookieMaxAge,
 	})
 
 	googleConfig := config.NewGoogleOAuthConfig(h.cfg)

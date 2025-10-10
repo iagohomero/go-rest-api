@@ -2,14 +2,14 @@ package auth
 
 // RegisterRequest represents the user registration request payload.
 type RegisterRequest struct {
-	Name     string `json:"name" validate:"required,max=50" example:"fake name"`
-	Email    string `json:"email" validate:"required,email,max=50" example:"fake@example.com"`
+	Name     string `json:"name"     validate:"required,max=50"                example:"fake name"`
+	Email    string `json:"email"    validate:"required,email,max=50"          example:"fake@example.com"`
 	Password string `json:"password" validate:"required,min=8,max=20,password" example:"password1"`
 }
 
 // LoginRequest represents the user login request payload.
 type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email,max=50" example:"fake@example.com"`
+	Email    string `json:"email"    validate:"required,email,max=50"          example:"fake@example.com"`
 	Password string `json:"password" validate:"required,min=8,max=20,password" example:"password1"`
 }
 

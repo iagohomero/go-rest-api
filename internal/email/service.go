@@ -6,7 +6,6 @@ import (
 	"go-rest-api/internal/common/logger"
 	"go-rest-api/internal/config"
 
-	"github.com/sirupsen/logrus"
 	"gopkg.in/gomail.v2"
 )
 
@@ -18,7 +17,7 @@ type Service interface {
 }
 
 type service struct {
-	log    *logrus.Logger
+	log    *logger.Logger
 	dialer *gomail.Dialer
 	from   string
 }
@@ -26,7 +25,7 @@ type service struct {
 // NewService creates a new email service instance.
 func NewService(cfg *config.Config) Service {
 	return &service{
-		log: logger.Log,
+		log: logger.New(),
 		dialer: gomail.NewDialer(
 			cfg.SMTP.Host,
 			cfg.SMTP.Port,

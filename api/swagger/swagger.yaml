@@ -144,7 +144,7 @@ definitions:
         example: up
         type: string
     type: object
-  healthcheck.HealthCheckResponse:
+  healthcheck.Response:
     properties:
       checks:
         items:
@@ -200,6 +200,20 @@ definitions:
     - password
     - role
     type: object
+  user.Response:
+    properties:
+      code:
+        example: 200
+        type: integer
+      message:
+        example: Operation completed successfully
+        type: string
+      status:
+        example: success
+        type: string
+      user:
+        $ref: '#/definitions/user.User'
+    type: object
   user.UpdateUserPasswordRequest:
     properties:
       password:
@@ -241,20 +255,6 @@ definitions:
       verified_email:
         type: boolean
     type: object
-  user.UserResponse:
-    properties:
-      code:
-        example: 200
-        type: integer
-      message:
-        example: Operation completed successfully
-        type: string
-      status:
-        example: success
-        type: string
-      user:
-        $ref: '#/definitions/user.User'
-    type: object
   user.UsersListResponse:
     properties:
       code:
@@ -286,8 +286,6 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  license:
-    name: MIT
   title: go-rest-api API documentation
   version: 1.0.0
 paths:
@@ -311,7 +309,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.Common'
         "404":
-          description: Not found
+          description: Not found".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       summary: Forgot password
@@ -326,6 +324,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/auth.LoginResponse'
+        "401":
+          description: Unauthorized".
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
       summary: Login with google
       tags:
       - Auth
@@ -348,7 +350,7 @@ paths:
           schema:
             $ref: '#/definitions/auth.LoginResponse'
         "401":
-          description: Invalid email or password
+          description: Invalid email or password".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       summary: Login
@@ -373,7 +375,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.Common'
         "404":
-          description: Not found
+          description: Not found".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       summary: Logout
@@ -398,7 +400,7 @@ paths:
           schema:
             $ref: '#/definitions/auth.RefreshTokenResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       summary: Refresh auth tokens
@@ -423,7 +425,7 @@ paths:
           schema:
             $ref: '#/definitions/auth.RegisterResponse'
         "409":
-          description: Email already taken
+          description: Email already taken".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       summary: Register as user
@@ -453,7 +455,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.Common'
         "401":
-          description: Password reset failed
+          description: Password reset failed".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       summary: Reset password
@@ -470,7 +472,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.Common'
         "401":
-          description: Unauthorized
+          description: Unauthorized".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       security:
@@ -494,7 +496,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.Common'
         "401":
-          description: Verify email failed
+          description: Verify email failed".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       summary: Verify email
@@ -511,11 +513,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/healthcheck.HealthCheckResponse'
+            $ref: '#/definitions/healthcheck.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/healthcheck.HealthCheckResponse'
+            $ref: '#/definitions/healthcheck.Response'
       summary: Health Check
       tags:
       - Health
@@ -545,11 +547,11 @@ paths:
           schema:
             $ref: '#/definitions/user.UsersListResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "403":
-          description: Forbidden
+          description: Forbidden".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       security:
@@ -572,17 +574,17 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/user.UserResponse'
+            $ref: '#/definitions/user.Response'
         "401":
-          description: Unauthorized
+          description: Unauthorized".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "403":
-          description: Forbidden
+          description: Forbidden".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "409":
-          description: Email already taken
+          description: Email already taken".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       security:
@@ -608,15 +610,15 @@ paths:
           schema:
             $ref: '#/definitions/httputil.Common'
         "401":
-          description: Unauthorized
+          description: Unauthorized".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "403":
-          description: Forbidden
+          description: Forbidden".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "404":
-          description: Not found
+          description: Not found".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       security:
@@ -639,17 +641,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.UserResponse'
+            $ref: '#/definitions/user.Response'
         "401":
-          description: Unauthorized
+          description: Unauthorized".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "403":
-          description: Forbidden
+          description: Forbidden".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "404":
-          description: Not found
+          description: Not found".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       security:
@@ -678,21 +680,21 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.UserResponse'
+            $ref: '#/definitions/user.Response'
         "401":
-          description: Unauthorized
+          description: Unauthorized".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "403":
-          description: Forbidden
+          description: Forbidden".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "404":
-          description: Not found
+          description: Not found".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
         "409":
-          description: Email already taken
+          description: Email already taken".
           schema:
             $ref: '#/definitions/errors.ErrorResponse'
       security:

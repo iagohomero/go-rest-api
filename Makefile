@@ -114,7 +114,7 @@ deps: ## Download and tidy dependencies
 install-tools: ## Install development tools
 	@echo "${GREEN}Installing development tools...${NC}"
 	@go install github.com/air-verse/air@latest
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.5.0
 	@go install github.com/swaggo/swag/cmd/swag@latest
 	@go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	@echo "${GREEN}Tools installed${NC}"

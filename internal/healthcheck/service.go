@@ -6,7 +6,6 @@ import (
 
 	"go-rest-api/internal/common/logger"
 
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -17,14 +16,14 @@ type Service interface {
 }
 
 type service struct {
-	log *logrus.Logger
+	log *logger.Logger
 	db  *gorm.DB
 }
 
 // NewService creates a new health check service instance.
 func NewService(db *gorm.DB) Service {
 	return &service{
-		log: logger.Log,
+		log: logger.New(),
 		db:  db,
 	}
 }
@@ -37,9 +36,9 @@ func (s *service) DatabaseCheck() error {
 		return err
 	}
 
-	if err := sqlDB.Ping(); err != nil {
-		s.log.Errorf("Failed to ping database: %v", err)
-		return err
+	if pingErr := sqlDB.Ping(); pingErr != nil {
+		s.log.Errorf("Failed to ping database: %v", pingErr)
+		return pingErr
 	}
 
 	return nil
@@ -51,7 +50,12 @@ func (s *service) MemoryCheck() error {
 	runtime.ReadMemStats(&memStats)
 
 	heapAlloc := memStats.HeapAlloc
-	heapThreshold := uint64(300 * 1024 * 1024)
+	const (
+		heapThresholdMB      = 300
+		bytesPerKilobyte     = 1024
+		kilobytesPerMegabyte = 1024
+	)
+	heapThreshold := uint64(heapThresholdMB * kilobytesPerMegabyte * bytesPerKilobyte)
 
 	s.log.Debugf("Heap memory allocation: %v bytes", heapAlloc)
 

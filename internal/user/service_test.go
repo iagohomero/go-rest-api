@@ -1,4 +1,4 @@
-package user
+package user_test
 
 import (
 	"context"
@@ -7,23 +7,25 @@ import (
 
 	pkgErrors "go-rest-api/internal/common/errors"
 	"go-rest-api/internal/common/validation"
+	"go-rest-api/internal/user"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// MockRepository is a mock implementation of the Repository interface
+// MockRepository is a mock implementation of the Repository interface.
 type MockRepository struct {
 	mock.Mock
 }
 
-func (m *MockRepository) FindAll(ctx context.Context, limit, offset int, search string) ([]User, error) {
+func (m *MockRepository) FindAll(ctx context.Context, limit, offset int, search string) ([]user.User, error) {
 	args := m.Called(ctx, limit, offset, search)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]User), args.Error(1)
+	return args.Get(0).([]user.User), args.Error(1)
 }
 
 func (m *MockRepository) Count(ctx context.Context, search string) (int64, error) {
@@ -31,28 +33,28 @@ func (m *MockRepository) Count(ctx context.Context, search string) (int64, error
 	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockRepository) FindByID(ctx context.Context, id string) (*User, error) {
+func (m *MockRepository) FindByID(ctx context.Context, id string) (*user.User, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockRepository) FindByEmail(ctx context.Context, email string) (*User, error) {
+func (m *MockRepository) FindByEmail(ctx context.Context, email string) (*user.User, error) {
 	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockRepository) Create(ctx context.Context, user *User) error {
+func (m *MockRepository) Create(ctx context.Context, user *user.User) error {
 	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
-func (m *MockRepository) Update(ctx context.Context, id string, user *User) (int64, error) {
+func (m *MockRepository) Update(ctx context.Context, id string, user *user.User) (int64, error) {
 	args := m.Called(ctx, id, user)
 	return args.Get(0).(int64), args.Error(1)
 }
@@ -67,49 +69,49 @@ func (m *MockRepository) Delete(ctx context.Context, id string) (int64, error) {
 	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockRepository) Save(ctx context.Context, user *User) error {
+func (m *MockRepository) Save(ctx context.Context, user *user.User) error {
 	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
-// setupTestService creates a new service with a mock repository for testing
-func setupTestService() (Service, *MockRepository) {
+// setupTestService creates a new service with a mock repository for testing.
+func setupTestService() (user.Service, *MockRepository) {
 	mockRepo := new(MockRepository)
 	validate := validation.New()
-	service := NewService(mockRepo, validate)
+	service := user.NewService(mockRepo, validate)
 	return service, mockRepo
 }
 
-// TestNewService tests the service constructor
+// TestNewService tests the service constructor.
 func TestNewService(t *testing.T) {
 	mockRepo := new(MockRepository)
 	validate := validation.New()
-	service := NewService(mockRepo, validate)
+	service := user.NewService(mockRepo, validate)
 
 	assert.NotNil(t, service)
 }
 
-// TestService_GetUsers tests the GetUsers service method
+// TestService_GetUsers tests the GetUsers service method.
 func TestService_GetUsers(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
 		name          string
-		params        *QueryUserRequest
+		params        *user.QueryUserRequest
 		setupMock     func(*MockRepository)
-		expectedUsers []User
+		expectedUsers []user.User
 		expectedCount int64
 		expectedError error
 	}{
 		{
 			name: "Success - Get users with default pagination",
-			params: &QueryUserRequest{
+			params: &user.QueryUserRequest{
 				Page:   1,
 				Limit:  10,
 				Search: "",
 			},
 			setupMock: func(m *MockRepository) {
-				users := []User{
+				users := []user.User{
 					{ID: uuid.New(), Name: "User 1", Email: "user1@example.com", Role: "user"},
 					{ID: uuid.New(), Name: "User 2", Email: "user2@example.com", Role: "admin"},
 				}
@@ -121,13 +123,13 @@ func TestService_GetUsers(t *testing.T) {
 		},
 		{
 			name: "Success - Get users with search filter",
-			params: &QueryUserRequest{
+			params: &user.QueryUserRequest{
 				Page:   1,
 				Limit:  10,
 				Search: "admin",
 			},
 			setupMock: func(m *MockRepository) {
-				users := []User{
+				users := []user.User{
 					{ID: uuid.New(), Name: "Admin User", Email: "admin@example.com", Role: "admin"},
 				}
 				m.On("Count", ctx, "admin").Return(int64(1), nil)
@@ -138,13 +140,13 @@ func TestService_GetUsers(t *testing.T) {
 		},
 		{
 			name: "Success - Get users with custom pagination",
-			params: &QueryUserRequest{
+			params: &user.QueryUserRequest{
 				Page:   2,
 				Limit:  5,
 				Search: "",
 			},
 			setupMock: func(m *MockRepository) {
-				users := []User{
+				users := []user.User{
 					{ID: uuid.New(), Name: "User 6", Email: "user6@example.com", Role: "user"},
 				}
 				m.On("Count", ctx, "").Return(int64(6), nil)
@@ -155,7 +157,7 @@ func TestService_GetUsers(t *testing.T) {
 		},
 		{
 			name: "Error - Count fails",
-			params: &QueryUserRequest{
+			params: &user.QueryUserRequest{
 				Page:   1,
 				Limit:  10,
 				Search: "",
@@ -168,7 +170,7 @@ func TestService_GetUsers(t *testing.T) {
 		},
 		{
 			name: "Error - FindAll fails",
-			params: &QueryUserRequest{
+			params: &user.QueryUserRequest{
 				Page:   1,
 				Limit:  10,
 				Search: "",
@@ -190,11 +192,11 @@ func TestService_GetUsers(t *testing.T) {
 			users, count, err := service.GetUsers(ctx, tt.params)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Equal(t, int64(0), count)
 				assert.Nil(t, users)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedCount, count)
 				assert.NotNil(t, users)
 			}
@@ -204,7 +206,7 @@ func TestService_GetUsers(t *testing.T) {
 	}
 }
 
-// TestService_GetUserByID tests the GetUserByID service method
+// TestService_GetUserByID tests the GetUserByID service method.
 func TestService_GetUserByID(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -213,14 +215,14 @@ func TestService_GetUserByID(t *testing.T) {
 		name          string
 		userID        string
 		setupMock     func(*MockRepository)
-		expectedUser  *User
+		expectedUser  *user.User
 		expectedError error
 	}{
 		{
 			name:   "Success - Get user by ID",
 			userID: validUUID.String(),
 			setupMock: func(m *MockRepository) {
-				user := &User{
+				user := &user.User{
 					ID:    validUUID,
 					Name:  "Test User",
 					Email: "test@example.com",
@@ -234,9 +236,9 @@ func TestService_GetUserByID(t *testing.T) {
 			name:   "Error - User not found",
 			userID: validUUID.String(),
 			setupMock: func(m *MockRepository) {
-				m.On("FindByID", ctx, validUUID.String()).Return(nil, ErrUserNotFound)
+				m.On("FindByID", ctx, validUUID.String()).Return(nil, user.ErrUserNotFound)
 			},
-			expectedError: ErrUserNotFound,
+			expectedError: user.ErrUserNotFound,
 		},
 		{
 			name:   "Error - Repository error",
@@ -256,10 +258,10 @@ func TestService_GetUserByID(t *testing.T) {
 			user, err := service.GetUserByID(ctx, tt.userID)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, user)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, user)
 			}
 
@@ -268,7 +270,7 @@ func TestService_GetUserByID(t *testing.T) {
 	}
 }
 
-// TestService_GetUserByEmail tests the GetUserByEmail service method
+// TestService_GetUserByEmail tests the GetUserByEmail service method.
 func TestService_GetUserByEmail(t *testing.T) {
 	ctx := context.Background()
 
@@ -276,14 +278,14 @@ func TestService_GetUserByEmail(t *testing.T) {
 		name          string
 		email         string
 		setupMock     func(*MockRepository)
-		expectedUser  *User
+		expectedUser  *user.User
 		expectedError error
 	}{
 		{
 			name:  "Success - Get user by email",
 			email: "test@example.com",
 			setupMock: func(m *MockRepository) {
-				user := &User{
+				user := &user.User{
 					ID:    uuid.New(),
 					Name:  "Test User",
 					Email: "test@example.com",
@@ -297,9 +299,9 @@ func TestService_GetUserByEmail(t *testing.T) {
 			name:  "Error - User not found",
 			email: "notfound@example.com",
 			setupMock: func(m *MockRepository) {
-				m.On("FindByEmail", ctx, "notfound@example.com").Return(nil, ErrUserNotFound)
+				m.On("FindByEmail", ctx, "notfound@example.com").Return(nil, user.ErrUserNotFound)
 			},
-			expectedError: ErrUserNotFound,
+			expectedError: user.ErrUserNotFound,
 		},
 	}
 
@@ -311,10 +313,10 @@ func TestService_GetUserByEmail(t *testing.T) {
 			user, err := service.GetUserByEmail(ctx, tt.email)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, user)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, user)
 			}
 
@@ -323,20 +325,20 @@ func TestService_GetUserByEmail(t *testing.T) {
 	}
 }
 
-// TestService_CreateUser tests the CreateUser service method
+// TestService_CreateUser tests the CreateUser service method.
 func TestService_CreateUser(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
 		name          string
-		request       *CreateUserRequest
+		request       *user.CreateUserRequest
 		setupMock     func(*MockRepository)
 		expectedError error
 		checkError    func(*testing.T, error)
 	}{
 		{
 			name: "Success - Create user",
-			request: &CreateUserRequest{
+			request: &user.CreateUserRequest{
 				Name:     "New User",
 				Email:    "newuser@example.com",
 				Password: "Password123!",
@@ -349,35 +351,35 @@ func TestService_CreateUser(t *testing.T) {
 		},
 		{
 			name: "Error - Email already taken",
-			request: &CreateUserRequest{
+			request: &user.CreateUserRequest{
 				Name:     "Duplicate User",
 				Email:    "duplicate@example.com",
 				Password: "Password123!",
 				Role:     "user",
 			},
 			setupMock: func(m *MockRepository) {
-				m.On("Create", ctx, mock.AnythingOfType("*user.User")).Return(ErrEmailTaken)
+				m.On("Create", ctx, mock.AnythingOfType("*user.User")).Return(user.ErrEmailTaken)
 			},
-			expectedError: ErrEmailTaken,
+			expectedError: user.ErrEmailTaken,
 		},
 		{
 			name: "Error - Validation fails (empty name)",
-			request: &CreateUserRequest{
+			request: &user.CreateUserRequest{
 				Name:     "",
 				Email:    "test@example.com",
 				Password: "Password123!",
 				Role:     "user",
 			},
-			setupMock: func(m *MockRepository) {
+			setupMock: func(_ *MockRepository) {
 				// No mock needed - validation fails first
 			},
 			checkError: func(t *testing.T, err error) {
-				assert.Error(t, err)
+				require.Error(t, err)
 			},
 		},
 		{
 			name: "Error - Repository error",
-			request: &CreateUserRequest{
+			request: &user.CreateUserRequest{
 				Name:     "Test User",
 				Email:    "test@example.com",
 				Password: "Password123!",
@@ -398,13 +400,14 @@ func TestService_CreateUser(t *testing.T) {
 
 			user, err := service.CreateUser(ctx, tt.request)
 
-			if tt.checkError != nil {
+			switch {
+			case tt.checkError != nil:
 				tt.checkError(t, err)
-			} else if tt.expectedError != nil {
-				assert.Error(t, err)
+			case tt.expectedError != nil:
+				require.Error(t, err)
 				assert.Nil(t, user)
-			} else {
-				assert.NoError(t, err)
+			default:
+				require.NoError(t, err)
 				assert.NotNil(t, user)
 				assert.Equal(t, tt.request.Name, user.Name)
 				assert.Equal(t, tt.request.Email, user.Email)
@@ -418,7 +421,7 @@ func TestService_CreateUser(t *testing.T) {
 	}
 }
 
-// TestService_UpdateUser tests the UpdateUser service method
+// TestService_UpdateUser tests the UpdateUser service method.
 func TestService_UpdateUser(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -426,21 +429,21 @@ func TestService_UpdateUser(t *testing.T) {
 	tests := []struct {
 		name          string
 		userID        string
-		request       *UpdateUserRequest
+		request       *user.UpdateUserRequest
 		setupMock     func(*MockRepository)
 		expectedError error
 	}{
 		{
 			name:   "Success - Update user name and email",
 			userID: validUUID.String(),
-			request: &UpdateUserRequest{
+			request: &user.UpdateUserRequest{
 				Name:  "Updated Name",
 				Email: "updated@example.com",
 			},
 			setupMock: func(m *MockRepository) {
 				m.On("Update", ctx, validUUID.String(), mock.AnythingOfType("*user.User")).
 					Return(int64(1), nil)
-				updatedUser := &User{
+				updatedUser := &user.User{
 					ID:    validUUID,
 					Name:  "Updated Name",
 					Email: "updated@example.com",
@@ -452,13 +455,13 @@ func TestService_UpdateUser(t *testing.T) {
 		{
 			name:   "Success - Update user password",
 			userID: validUUID.String(),
-			request: &UpdateUserRequest{
+			request: &user.UpdateUserRequest{
 				Password: "NewPassword123!",
 			},
 			setupMock: func(m *MockRepository) {
 				m.On("Update", ctx, validUUID.String(), mock.AnythingOfType("*user.User")).
 					Return(int64(1), nil)
-				updatedUser := &User{
+				updatedUser := &user.User{
 					ID: validUUID,
 				}
 				m.On("FindByID", ctx, validUUID.String()).Return(updatedUser, nil)
@@ -468,12 +471,12 @@ func TestService_UpdateUser(t *testing.T) {
 		{
 			name:   "Error - All fields empty",
 			userID: validUUID.String(),
-			request: &UpdateUserRequest{
+			request: &user.UpdateUserRequest{
 				Name:     "",
 				Email:    "",
 				Password: "",
 			},
-			setupMock: func(m *MockRepository) {
+			setupMock: func(_ *MockRepository) {
 				// No mock needed
 			},
 			expectedError: pkgErrors.ErrBadRequest,
@@ -481,26 +484,26 @@ func TestService_UpdateUser(t *testing.T) {
 		{
 			name:   "Error - User not found",
 			userID: validUUID.String(),
-			request: &UpdateUserRequest{
+			request: &user.UpdateUserRequest{
 				Name: "Updated Name",
 			},
 			setupMock: func(m *MockRepository) {
 				m.On("Update", ctx, validUUID.String(), mock.AnythingOfType("*user.User")).
 					Return(int64(0), nil)
 			},
-			expectedError: ErrUserNotFound,
+			expectedError: user.ErrUserNotFound,
 		},
 		{
 			name:   "Error - Email already taken",
 			userID: validUUID.String(),
-			request: &UpdateUserRequest{
+			request: &user.UpdateUserRequest{
 				Email: "taken@example.com",
 			},
 			setupMock: func(m *MockRepository) {
 				m.On("Update", ctx, validUUID.String(), mock.AnythingOfType("*user.User")).
-					Return(int64(0), ErrEmailTaken)
+					Return(int64(0), user.ErrEmailTaken)
 			},
-			expectedError: ErrEmailTaken,
+			expectedError: user.ErrEmailTaken,
 		},
 	}
 
@@ -512,10 +515,10 @@ func TestService_UpdateUser(t *testing.T) {
 			user, err := service.UpdateUser(ctx, tt.request, tt.userID)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, user)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, user)
 			}
 
@@ -524,7 +527,7 @@ func TestService_UpdateUser(t *testing.T) {
 	}
 }
 
-// TestService_UpdatePassOrVerify tests the UpdatePassOrVerify service method
+// TestService_UpdatePassOrVerify tests the UpdatePassOrVerify service method.
 func TestService_UpdatePassOrVerify(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -532,14 +535,14 @@ func TestService_UpdatePassOrVerify(t *testing.T) {
 	tests := []struct {
 		name          string
 		userID        string
-		request       *UpdateUserPasswordRequest
+		request       *user.UpdateUserPasswordRequest
 		setupMock     func(*MockRepository)
 		expectedError error
 	}{
 		{
 			name:   "Success - Update password",
 			userID: validUUID.String(),
-			request: &UpdateUserPasswordRequest{
+			request: &user.UpdateUserPasswordRequest{
 				Password: "NewPassword123!",
 			},
 			setupMock: func(m *MockRepository) {
@@ -551,7 +554,7 @@ func TestService_UpdatePassOrVerify(t *testing.T) {
 		{
 			name:   "Success - Verify email",
 			userID: validUUID.String(),
-			request: &UpdateUserPasswordRequest{
+			request: &user.UpdateUserPasswordRequest{
 				VerifiedEmail: true,
 			},
 			setupMock: func(m *MockRepository) {
@@ -563,7 +566,7 @@ func TestService_UpdatePassOrVerify(t *testing.T) {
 		{
 			name:   "Success - Update password and verify email",
 			userID: validUUID.String(),
-			request: &UpdateUserPasswordRequest{
+			request: &user.UpdateUserPasswordRequest{
 				Password:      "NewPassword123!",
 				VerifiedEmail: true,
 			},
@@ -576,11 +579,11 @@ func TestService_UpdatePassOrVerify(t *testing.T) {
 		{
 			name:   "Error - Both fields empty/false",
 			userID: validUUID.String(),
-			request: &UpdateUserPasswordRequest{
+			request: &user.UpdateUserPasswordRequest{
 				Password:      "",
 				VerifiedEmail: false,
 			},
-			setupMock: func(m *MockRepository) {
+			setupMock: func(_ *MockRepository) {
 				// No mock needed
 			},
 			expectedError: pkgErrors.ErrBadRequest,
@@ -588,14 +591,14 @@ func TestService_UpdatePassOrVerify(t *testing.T) {
 		{
 			name:   "Error - User not found",
 			userID: validUUID.String(),
-			request: &UpdateUserPasswordRequest{
+			request: &user.UpdateUserPasswordRequest{
 				Password: "NewPassword123!",
 			},
 			setupMock: func(m *MockRepository) {
 				m.On("Update", ctx, validUUID.String(), mock.AnythingOfType("*user.User")).
 					Return(int64(0), nil)
 			},
-			expectedError: ErrUserNotFound,
+			expectedError: user.ErrUserNotFound,
 		},
 	}
 
@@ -607,9 +610,9 @@ func TestService_UpdatePassOrVerify(t *testing.T) {
 			err := service.UpdatePassOrVerify(ctx, tt.request, tt.userID)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -617,7 +620,7 @@ func TestService_UpdatePassOrVerify(t *testing.T) {
 	}
 }
 
-// TestService_DeleteUser tests the DeleteUser service method
+// TestService_DeleteUser tests the DeleteUser service method.
 func TestService_DeleteUser(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -642,7 +645,7 @@ func TestService_DeleteUser(t *testing.T) {
 			setupMock: func(m *MockRepository) {
 				m.On("Delete", ctx, validUUID.String()).Return(int64(0), nil)
 			},
-			expectedError: ErrUserNotFound,
+			expectedError: user.ErrUserNotFound,
 		},
 		{
 			name:   "Error - Repository error",
@@ -662,9 +665,9 @@ func TestService_DeleteUser(t *testing.T) {
 			err := service.DeleteUser(ctx, tt.userID)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -672,38 +675,38 @@ func TestService_DeleteUser(t *testing.T) {
 	}
 }
 
-// TestService_CreateGoogleUser tests the CreateGoogleUser service method
+// TestService_CreateGoogleUser tests the CreateGoogleUser service method.
 func TestService_CreateGoogleUser(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
 		name          string
-		request       *CreateGoogleUserRequest
+		request       *user.CreateGoogleUserRequest
 		setupMock     func(*MockRepository)
 		expectedError error
 	}{
 		{
 			name: "Success - Create new Google user",
-			request: &CreateGoogleUserRequest{
+			request: &user.CreateGoogleUserRequest{
 				Name:          "Google User",
 				Email:         "google@example.com",
 				VerifiedEmail: true,
 			},
 			setupMock: func(m *MockRepository) {
-				m.On("FindByEmail", ctx, "google@example.com").Return(nil, ErrUserNotFound)
+				m.On("FindByEmail", ctx, "google@example.com").Return(nil, user.ErrUserNotFound)
 				m.On("Create", ctx, mock.AnythingOfType("*user.User")).Return(nil)
 			},
 			expectedError: nil,
 		},
 		{
 			name: "Success - Update existing user verification",
-			request: &CreateGoogleUserRequest{
+			request: &user.CreateGoogleUserRequest{
 				Name:          "Existing User",
 				Email:         "existing@example.com",
 				VerifiedEmail: true,
 			},
 			setupMock: func(m *MockRepository) {
-				existingUser := &User{
+				existingUser := &user.User{
 					ID:            uuid.New(),
 					Name:          "Existing User",
 					Email:         "existing@example.com",
@@ -716,19 +719,19 @@ func TestService_CreateGoogleUser(t *testing.T) {
 		},
 		{
 			name: "Error - Validation fails (empty name)",
-			request: &CreateGoogleUserRequest{
+			request: &user.CreateGoogleUserRequest{
 				Name:          "",
 				Email:         "test@example.com",
 				VerifiedEmail: true,
 			},
-			setupMock: func(m *MockRepository) {
+			setupMock: func(_ *MockRepository) {
 				// No mock needed - validation fails first
 			},
 			expectedError: errors.New("validation error"),
 		},
 		{
 			name: "Error - FindByEmail returns unexpected error",
-			request: &CreateGoogleUserRequest{
+			request: &user.CreateGoogleUserRequest{
 				Name:          "Test User",
 				Email:         "test@example.com",
 				VerifiedEmail: true,
@@ -740,26 +743,26 @@ func TestService_CreateGoogleUser(t *testing.T) {
 		},
 		{
 			name: "Error - Create fails",
-			request: &CreateGoogleUserRequest{
+			request: &user.CreateGoogleUserRequest{
 				Name:          "New User",
 				Email:         "new@example.com",
 				VerifiedEmail: true,
 			},
 			setupMock: func(m *MockRepository) {
-				m.On("FindByEmail", ctx, "new@example.com").Return(nil, ErrUserNotFound)
+				m.On("FindByEmail", ctx, "new@example.com").Return(nil, user.ErrUserNotFound)
 				m.On("Create", ctx, mock.AnythingOfType("*user.User")).Return(errors.New("create error"))
 			},
 			expectedError: errors.New("create error"),
 		},
 		{
 			name: "Error - Save fails",
-			request: &CreateGoogleUserRequest{
+			request: &user.CreateGoogleUserRequest{
 				Name:          "Existing User",
 				Email:         "existing@example.com",
 				VerifiedEmail: true,
 			},
 			setupMock: func(m *MockRepository) {
-				existingUser := &User{
+				existingUser := &user.User{
 					ID:            uuid.New(),
 					Name:          "Existing User",
 					Email:         "existing@example.com",
@@ -780,9 +783,9 @@ func TestService_CreateGoogleUser(t *testing.T) {
 			user, err := service.CreateGoogleUser(ctx, tt.request)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, user)
 				assert.Equal(t, tt.request.Email, user.Email)
 				assert.Equal(t, tt.request.VerifiedEmail, user.VerifiedEmail)

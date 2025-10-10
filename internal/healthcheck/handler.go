@@ -22,9 +22,9 @@ func NewHandler(service Service) *Handler {
 // @Description Check the status of services and database connections
 // @Accept json
 // @Produce json
-// @Success 200 {object} HealthCheckResponse
-// @Failure 500 {object} HealthCheckResponse
-// @Router /health [get]
+// @Success 200 {object} Response
+// @Failure 500 {object} Response
+// @Router /health [get].
 func (h *Handler) Check(c *fiber.Ctx) error {
 	isHealthy := true
 	var checks []CheckResult
@@ -71,7 +71,7 @@ func (h *Handler) Check(c *fiber.Ctx) error {
 		status = "error"
 	}
 
-	return c.Status(statusCode).JSON(HealthCheckResponse{
+	return c.Status(statusCode).JSON(Response{
 		Status:    status,
 		Message:   "Health check completed",
 		Code:      statusCode,

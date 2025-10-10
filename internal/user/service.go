@@ -9,7 +9,6 @@ import (
 	"go-rest-api/internal/common/logger"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 )
 
 // Service defines the interface for user business logic operations.
@@ -25,7 +24,7 @@ type Service interface {
 }
 
 type service struct {
-	log        *logrus.Logger
+	log        *logger.Logger
 	repository Repository
 	validate   *validator.Validate
 }
@@ -33,7 +32,7 @@ type service struct {
 // NewService creates a new user service instance.
 func NewService(repository Repository, validate *validator.Validate) Service {
 	return &service{
-		log:        logger.Log,
+		log:        logger.New(),
 		repository: repository,
 		validate:   validate,
 	}
@@ -89,8 +88,8 @@ func (s *service) CreateUser(ctx context.Context, req *CreateUserRequest) (*User
 		Role:     req.Role,
 	}
 
-	if err := s.repository.Create(ctx, user); err != nil {
-		return nil, err
+	if createErr := s.repository.Create(ctx, user); createErr != nil {
+		return nil, createErr
 	}
 
 	return user, nil
