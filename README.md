@@ -399,27 +399,6 @@ go-rest-api/
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] User authentication with JWT
-- [x] OAuth 2.0 integration (Google)
-- [x] Password recovery flow
-- [x] Email service integration
-- [x] API documentation with Swagger
-- [x] Docker support
-- [ ] Two-factor authentication (2FA)
-- [ ] Rate limiting per user
-- [ ] WebSocket support
-- [ ] Comprehensive audit logging
-- [ ] Additional OAuth providers (GitHub, Facebook)
-- [ ] Refresh token rotation
-- [ ] API versioning strategy
-
-See the [open issues](https://github.com/iagohomero/go-rest-api/issues) for a full list of proposed features and known issues.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 <!-- CONTRIBUTING -->
 ## Contributing
 
@@ -429,9 +408,9 @@ If you have a suggestion that would make this better, please fork the repo and c
 Don't forget to give the project a star! Thanks again!
 
 1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
+2. Create your Feature Branch (`git checkout -b feat/amazing-feature`)
+3. Commit your Changes (`git commit -m 'feat: add some amazing-feature'`)
+4. Push to the Branch (`git push origin feat/amazing-feature`)
 5. Open a Pull Request
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
