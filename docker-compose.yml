@@ -1,0 +1,60 @@
+services:
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
+    networks:
+      - go-network
+
+  postgres:
+    image: postgres:alpine
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    ports:
+      - ${DB_PORT}:5432
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - go-network
+
+  go-rest-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: go-rest-api
+    ports:
+      - ${APP_PORT}:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/usr/src/go-rest-api
+    restart: on-failure
+    env_file:
+      - .env
+    networks:
+      - go-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${APP_URL}/v1/health-check"]
+      interval: 40s
+      timeout: 30s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  dbdata:
+
+networks:
+  go-network:
+    driver: bridge
+

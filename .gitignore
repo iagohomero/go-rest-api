@@ -1,0 +1,28 @@
+# Environment variables
+.env*
+!.env*.example
+
+# Binaries / Executables
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Temporary
+tmp/
+
+# Linter
+lint.txt
+
+# Build artifacts
+main
+
+# IDE / Editor
+.cursorignore
+
+# Coverage reports
+coverage
+coverage.html
+coverage.out

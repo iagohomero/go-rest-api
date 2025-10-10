@@ -1,0 +1,28 @@
+name: Linter
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  Golint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Repository
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.5"
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Run Golint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          golangci_lint_flags: "--config=.golangci.yml"
+          fail_on_error: true
