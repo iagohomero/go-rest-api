@@ -77,8 +77,7 @@ func (s *Server) SetupRoutes() {
 	}, authMiddlewareFunc)
 
 	if !s.cfg.App.IsProd() {
-		docsGroup := v1.Group("/docs")
-		docsGroup.Get("/*", swagger.HandlerDefault)
+		v1.Get("/docs/*", swagger.HandlerDefault)
 	}
 
 	s.app.Use(httputil.NotFoundHandler)

@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "go-rest-api/api/swagger"
 	"go-rest-api/internal/common/logger"
 	"go-rest-api/internal/config"
 	"go-rest-api/internal/database"
