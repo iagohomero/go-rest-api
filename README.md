@@ -3,7 +3,6 @@
 <!-- PROJECT SHIELDS -->
 [![Go Version][go-shield]][go-url]
 [![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
 
 <!-- PROJECT LOGO -->
 <br />
@@ -99,6 +98,7 @@ This project leverages modern Go libraries and tools to provide a robust foundat
 - ✅ **Middleware Support** - Authentication, logging, rate limiting, and recovery middleware
 - ✅ **Docker Support** - Full Docker and Docker Compose configuration
 - ✅ **Comprehensive Testing** - Unit and integration tests with coverage reports
+- ✅ **Code Quality Assurance** - Configured with golangci-lint for maintaining code standards
 - ✅ **Environment Configuration** - Flexible configuration using Viper
 - ✅ **Graceful Shutdown** - Proper cleanup and connection management
 - ✅ **Role-Based Access Control** - RBAC implementation for permissions management
@@ -319,6 +319,8 @@ make docker-logs      # View Docker logs
 make migrate-create name=migration_name   # Create new migration
 make migrate-up                           # Run all pending migrations
 make migrate-down                         # Rollback last migration
+make docker-migrate-up                    # Run all pending migrations using Docker
+make docker-migrate-down                  # Rollback last migration using Docker
 
 # Documentation
 make swag             # Generate/update Swagger documentation
