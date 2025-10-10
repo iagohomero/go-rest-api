@@ -102,7 +102,7 @@ swag: ## Generate Swagger documentation
 
 clean: ## Clean build artifacts
 	@echo "${GREEN}Cleaning build artifacts...${NC}"
-	@rm -rf bin/ coverage.out coverage.html
+	@rm -rf bin/ coverage.out coverage.html api.exe
 	@echo "${GREEN}Clean complete${NC}"
 
 deps: ## Download and tidy dependencies

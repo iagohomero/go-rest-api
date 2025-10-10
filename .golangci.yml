@@ -12,6 +12,12 @@
 
 version: "2"
 
+run:
+  # Exclude swagger generated files from analysis
+  skip-files:
+    - "api/swagger/docs.go"
+    - "api/swagger/swagger.go"
+
 issues:
   # Maximum count of issues with the same text.
   # Set to 0 to disable.
@@ -36,7 +42,7 @@ formatters:
       # with the given prefixes are grouped after 3rd-party packages.
       # Default: []
       local-prefixes:
-        - github.com/my/project
+        - go-rest-api
 
     golines:
       # Target maximum line length.
@@ -469,9 +475,7 @@ linters:
           - noctx
           - unqueryvet
           - wrapcheck
-      - path: 'api/.*'
-        linters:
-          - all
+      # Exclude all checks from swagger generated files
       - path: 'api/swagger/docs.go'
         linters:
           - gochecknoglobals

@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"go-rest-api/internal/user"
 	"time"
+
+	"go-rest-api/internal/user"
 )
 
 // TokenExpires represents a token with its expiration time.
