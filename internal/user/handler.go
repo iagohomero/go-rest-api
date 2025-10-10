@@ -10,6 +10,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	// DefaultPageLimit is the default number of items per page.
+	DefaultPageLimit = 10
+)
+
 // Handler handles user HTTP requests.
 type Handler struct {
 	service Service
@@ -22,6 +27,8 @@ func NewHandler(service Service) *Handler {
 	}
 }
 
+// GetUsers retrieves all users.
+//
 // @Tags         Users
 // @Summary      Get all users
 // @Description  Only admins can retrieve all users.
@@ -32,12 +39,12 @@ func NewHandler(service Service) *Handler {
 // @Param        search   query     string  false  "Search by name or email or role"
 // @Router       /users [get]
 // @Success      200  {object}  UsersListResponse
-// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized"
-// @Failure      403  {object}  errors.ErrorResponse  "Forbidden"
+// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized".
+// @Failure      403  {object}  errors.ErrorResponse  "Forbidden".
 func (h *Handler) GetUsers(c *fiber.Ctx) error {
 	query := &QueryUserRequest{
 		Page:   c.QueryInt("page", 1),
-		Limit:  c.QueryInt("limit", 10),
+		Limit:  c.QueryInt("limit", DefaultPageLimit),
 		Search: c.Query("search", ""),
 	}
 
@@ -59,6 +66,8 @@ func (h *Handler) GetUsers(c *fiber.Ctx) error {
 		})
 }
 
+// GetUserByID retrieves a user by ID.
+//
 // @Tags         Users
 // @Summary      Get a user
 // @Description  Logged in users can fetch only their own user information. Only admins can fetch other users.
@@ -66,10 +75,10 @@ func (h *Handler) GetUsers(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        id  path  string  true  "User id"
 // @Router       /users/{id} [get]
-// @Success      200  {object}  UserResponse
-// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized"
-// @Failure      403  {object}  errors.ErrorResponse  "Forbidden"
-// @Failure      404  {object}  errors.ErrorResponse  "Not found"
+// @Success      200  {object}  Response
+// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized".
+// @Failure      403  {object}  errors.ErrorResponse  "Forbidden".
+// @Failure      404  {object}  errors.ErrorResponse  "Not found".
 func (h *Handler) GetUserByID(c *fiber.Ctx) error {
 	userID := c.Params("userId")
 
@@ -83,7 +92,7 @@ func (h *Handler) GetUserByID(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).
-		JSON(UserResponse{
+		JSON(Response{
 			Code:    fiber.StatusOK,
 			Status:  "success",
 			Message: "Get user successfully",
@@ -91,6 +100,8 @@ func (h *Handler) GetUserByID(c *fiber.Ctx) error {
 		})
 }
 
+// CreateUser creates a new user.
+//
 // @Tags         Users
 // @Summary      Create a user
 // @Description  Only admins can create other users.
@@ -98,10 +109,10 @@ func (h *Handler) GetUserByID(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        request  body  CreateUserRequest  true  "Request body"
 // @Router       /users [post]
-// @Success      201  {object}  UserResponse
-// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized"
-// @Failure      403  {object}  errors.ErrorResponse  "Forbidden"
-// @Failure      409  {object}  errors.ErrorResponse  "Email already taken"
+// @Success      201  {object}  Response
+// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized".
+// @Failure      403  {object}  errors.ErrorResponse  "Forbidden".
+// @Failure      409  {object}  errors.ErrorResponse  "Email already taken".
 func (h *Handler) CreateUser(c *fiber.Ctx) error {
 	req := new(CreateUserRequest)
 
@@ -115,7 +126,7 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).
-		JSON(UserResponse{
+		JSON(Response{
 			Code:    fiber.StatusCreated,
 			Status:  "success",
 			Message: "Create user successfully",
@@ -123,6 +134,8 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 		})
 }
 
+// UpdateUser updates a user.
+//
 // @Tags         Users
 // @Summary      Update a user
 // @Description  Logged in users can only update their own information. Only admins can update other users.
@@ -131,11 +144,11 @@ func (h *Handler) CreateUser(c *fiber.Ctx) error {
 // @Param        id  path  string  true  "User id"
 // @Param        request  body  UpdateUserRequest  true  "Request body"
 // @Router       /users/{id} [patch]
-// @Success      200  {object}  UserResponse
-// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized"
-// @Failure      403  {object}  errors.ErrorResponse  "Forbidden"
-// @Failure      404  {object}  errors.ErrorResponse  "Not found"
-// @Failure      409  {object}  errors.ErrorResponse  "Email already taken"
+// @Success      200  {object}  Response
+// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized".
+// @Failure      403  {object}  errors.ErrorResponse  "Forbidden".
+// @Failure      404  {object}  errors.ErrorResponse  "Not found".
+// @Failure      409  {object}  errors.ErrorResponse  "Email already taken".
 func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 	req := new(UpdateUserRequest)
 	userID := c.Params("userId")
@@ -154,7 +167,7 @@ func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).
-		JSON(UserResponse{
+		JSON(Response{
 			Code:    fiber.StatusOK,
 			Status:  "success",
 			Message: "Update user successfully",
@@ -162,6 +175,8 @@ func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 		})
 }
 
+// DeleteUser deletes a user.
+//
 // @Tags         Users
 // @Summary      Delete a user
 // @Description  Logged in users can delete only themselves. Only admins can delete other users.
@@ -170,9 +185,9 @@ func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 // @Param        id  path  string  true  "User id"
 // @Router       /users/{id} [delete]
 // @Success      200  {object}  httputil.Common
-// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized"
-// @Failure      403  {object}  errors.ErrorResponse  "Forbidden"
-// @Failure      404  {object}  errors.ErrorResponse  "Not found"
+// @Failure      401  {object}  errors.ErrorResponse  "Unauthorized".
+// @Failure      403  {object}  errors.ErrorResponse  "Forbidden".
+// @Failure      404  {object}  errors.ErrorResponse  "Not found".
 func (h *Handler) DeleteUser(c *fiber.Ctx) error {
 	userID := c.Params("userId")
 

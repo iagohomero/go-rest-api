@@ -14,7 +14,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 )
 
 // Service defines the interface for authentication business logic operations.
@@ -36,7 +35,7 @@ type Service interface {
 }
 
 type service struct {
-	log         *logrus.Logger
+	log         *logger.Logger
 	repository  Repository
 	validate    *validator.Validate
 	userService user.Service
@@ -51,7 +50,7 @@ func NewService(
 	cfg *config.Config,
 ) Service {
 	return &service{
-		log:         logger.Log,
+		log:         logger.New(),
 		repository:  repository,
 		validate:    validate,
 		userService: userService,
@@ -77,8 +76,8 @@ func (s *service) Register(ctx context.Context, req *RegisterRequest) (*user.Use
 		Role:     rbac.RoleUser,
 	}
 
-	if err := s.repository.CreateUser(ctx, newUser); err != nil {
-		return nil, err
+	if createErr := s.repository.CreateUser(ctx, newUser); createErr != nil {
+		return nil, createErr
 	}
 
 	return newUser, nil
@@ -137,7 +136,11 @@ func (s *service) RefreshAuth(ctx context.Context, req *RefreshTokenRequest) (*T
 	return newTokens, nil
 }
 
-func (s *service) ResetPassword(ctx context.Context, query *ResetPasswordRequest, req *user.UpdateUserPasswordRequest) error {
+func (s *service) ResetPassword(
+	ctx context.Context,
+	query *ResetPasswordRequest,
+	req *user.UpdateUserPasswordRequest,
+) error {
 	if err := s.validate.Struct(query); err != nil {
 		return err
 	}

@@ -10,9 +10,6 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {},
-        "license": {
-            "name": "MIT"
-        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -50,7 +47,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not found",
+                        "description": "Not found\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -70,6 +67,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/auth.LoginResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized\".",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     }
                 }
@@ -106,7 +109,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Invalid email or password",
+                        "description": "Invalid email or password\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -145,7 +148,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not found",
+                        "description": "Not found\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -184,7 +187,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -223,7 +226,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "Email already taken",
+                        "description": "Email already taken\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -269,7 +272,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Password reset failed",
+                        "description": "Password reset failed\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -300,7 +303,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -334,7 +337,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Verify email failed",
+                        "description": "Verify email failed\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -359,13 +362,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/healthcheck.HealthCheckResponse"
+                            "$ref": "#/definitions/healthcheck.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/healthcheck.HealthCheckResponse"
+                            "$ref": "#/definitions/healthcheck.Response"
                         }
                     }
                 }
@@ -416,13 +419,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Forbidden\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -458,23 +461,23 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponse"
+                            "$ref": "#/definitions/user.Response"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Forbidden\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "409": {
-                        "description": "Email already taken",
+                        "description": "Email already taken\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -510,23 +513,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponse"
+                            "$ref": "#/definitions/user.Response"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Forbidden\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not found",
+                        "description": "Not found\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -564,19 +567,19 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Forbidden\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not found",
+                        "description": "Not found\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -619,29 +622,29 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponse"
+                            "$ref": "#/definitions/user.Response"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Forbidden\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not found",
+                        "description": "Not found\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "409": {
-                        "description": "Email already taken",
+                        "description": "Email already taken\".",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -855,7 +858,7 @@ const docTemplate = `{
                 }
             }
         },
-        "healthcheck.HealthCheckResponse": {
+        "healthcheck.Response": {
             "type": "object",
             "properties": {
                 "checks": {
@@ -931,6 +934,26 @@ const docTemplate = `{
                 }
             }
         },
+        "user.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Operation completed successfully"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "user": {
+                    "$ref": "#/definitions/user.User"
+                }
+            }
+        },
         "user.UpdateUserPasswordRequest": {
             "type": "object",
             "properties": {
@@ -986,26 +1009,6 @@ const docTemplate = `{
                 },
                 "verified_email": {
                     "type": "boolean"
-                }
-            }
-        },
-        "user.UserResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 200
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Operation completed successfully"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "success"
-                },
-                "user": {
-                    "$ref": "#/definitions/user.User"
                 }
             }
         },

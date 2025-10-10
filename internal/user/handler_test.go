@@ -1,10 +1,11 @@
-package user
+package user_test
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -12,56 +13,59 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
+	"go-rest-api/internal/user"
 )
 
-// MockService is a mock implementation of the Service interface
+// MockService is a mock implementation of the Service interface.
 type MockService struct {
 	mock.Mock
 }
 
-func (m *MockService) GetUsers(ctx context.Context, params *QueryUserRequest) ([]User, int64, error) {
+func (m *MockService) GetUsers(ctx context.Context, params *user.QueryUserRequest) ([]user.User, int64, error) {
 	args := m.Called(ctx, params)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
-	return args.Get(0).([]User), args.Get(1).(int64), args.Error(2)
+	return args.Get(0).([]user.User), args.Get(1).(int64), args.Error(2)
 }
 
-func (m *MockService) GetUserByID(ctx context.Context, id string) (*User, error) {
+func (m *MockService) GetUserByID(ctx context.Context, id string) (*user.User, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockService) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+func (m *MockService) GetUserByEmail(ctx context.Context, email string) (*user.User, error) {
 	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockService) CreateUser(ctx context.Context, req *CreateUserRequest) (*User, error) {
+func (m *MockService) CreateUser(ctx context.Context, req *user.CreateUserRequest) (*user.User, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockService) UpdatePassOrVerify(ctx context.Context, req *UpdateUserPasswordRequest, id string) error {
+func (m *MockService) UpdatePassOrVerify(ctx context.Context, req *user.UpdateUserPasswordRequest, id string) error {
 	args := m.Called(ctx, req, id)
 	return args.Error(0)
 }
 
-func (m *MockService) UpdateUser(ctx context.Context, req *UpdateUserRequest, id string) (*User, error) {
+func (m *MockService) UpdateUser(ctx context.Context, req *user.UpdateUserRequest, id string) (*user.User, error) {
 	args := m.Called(ctx, req, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
 func (m *MockService) DeleteUser(ctx context.Context, id string) error {
@@ -69,22 +73,22 @@ func (m *MockService) DeleteUser(ctx context.Context, id string) error {
 	return args.Error(0)
 }
 
-func (m *MockService) CreateGoogleUser(ctx context.Context, req *CreateGoogleUserRequest) (*User, error) {
+func (m *MockService) CreateGoogleUser(ctx context.Context, req *user.CreateGoogleUserRequest) (*user.User, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
-// setupTestHandler creates a new handler with a mock service for testing
-func setupTestHandler() (*Handler, *MockService) {
+// setupTestHandler creates a new handler with a mock service for testing.
+func setupTestHandler() (*user.Handler, *MockService) {
 	mockService := new(MockService)
-	handler := NewHandler(mockService)
+	handler := user.NewHandler(mockService)
 	return handler, mockService
 }
 
-// setupFiberApp creates a Fiber app for testing
+// setupFiberApp creates a Fiber app for testing.
 func setupFiberApp() *fiber.App {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -96,16 +100,15 @@ func setupFiberApp() *fiber.App {
 	return app
 }
 
-// TestNewHandler tests the handler constructor
+// TestNewHandler tests the handler constructor.
 func TestNewHandler(t *testing.T) {
 	mockService := new(MockService)
-	handler := NewHandler(mockService)
+	handler := user.NewHandler(mockService)
 
 	assert.NotNil(t, handler)
-	assert.Equal(t, mockService, handler.service)
 }
 
-// TestHandler_GetUsers tests the GetUsers handler
+// TestHandler_GetUsers tests the GetUsers handler.
 func TestHandler_GetUsers(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -118,11 +121,11 @@ func TestHandler_GetUsers(t *testing.T) {
 			name:        "Success - Get users with default pagination",
 			queryParams: "",
 			setupMock: func(m *MockService) {
-				users := []User{
+				users := []user.User{
 					{ID: uuid.New(), Name: "User 1", Email: "user1@example.com", Role: "user"},
 					{ID: uuid.New(), Name: "User 2", Email: "user2@example.com", Role: "admin"},
 				}
-				m.On("GetUsers", mock.Anything, &QueryUserRequest{Page: 1, Limit: 10, Search: ""}).
+				m.On("GetUsers", mock.Anything, &user.QueryUserRequest{Page: 1, Limit: 10, Search: ""}).
 					Return(users, int64(2), nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -132,10 +135,10 @@ func TestHandler_GetUsers(t *testing.T) {
 			name:        "Success - Get users with custom pagination",
 			queryParams: "?page=2&limit=5",
 			setupMock: func(m *MockService) {
-				users := []User{
+				users := []user.User{
 					{ID: uuid.New(), Name: "User 3", Email: "user3@example.com", Role: "user"},
 				}
-				m.On("GetUsers", mock.Anything, &QueryUserRequest{Page: 2, Limit: 5, Search: ""}).
+				m.On("GetUsers", mock.Anything, &user.QueryUserRequest{Page: 2, Limit: 5, Search: ""}).
 					Return(users, int64(6), nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -145,10 +148,10 @@ func TestHandler_GetUsers(t *testing.T) {
 			name:        "Success - Get users with search filter",
 			queryParams: "?search=admin",
 			setupMock: func(m *MockService) {
-				users := []User{
+				users := []user.User{
 					{ID: uuid.New(), Name: "Admin User", Email: "admin@example.com", Role: "admin"},
 				}
-				m.On("GetUsers", mock.Anything, &QueryUserRequest{Page: 1, Limit: 10, Search: "admin"}).
+				m.On("GetUsers", mock.Anything, &user.QueryUserRequest{Page: 1, Limit: 10, Search: "admin"}).
 					Return(users, int64(1), nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -158,7 +161,7 @@ func TestHandler_GetUsers(t *testing.T) {
 			name:        "Error - Service returns error",
 			queryParams: "",
 			setupMock: func(m *MockService) {
-				m.On("GetUsers", mock.Anything, &QueryUserRequest{Page: 1, Limit: 10, Search: ""}).
+				m.On("GetUsers", mock.Anything, &user.QueryUserRequest{Page: 1, Limit: 10, Search: ""}).
 					Return(nil, int64(0), errors.New("database error"))
 			},
 			expectedStatus: fiber.StatusInternalServerError,
@@ -175,10 +178,10 @@ func TestHandler_GetUsers(t *testing.T) {
 
 			app.Get("/users", handler.GetUsers)
 
-			req := httptest.NewRequest("GET", "/users"+tt.queryParams, nil)
+			req := httptest.NewRequest(http.MethodGet, "/users"+tt.queryParams, nil)
 			resp, err := app.Test(req)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
 			mockService.AssertExpectations(t)
@@ -186,7 +189,7 @@ func TestHandler_GetUsers(t *testing.T) {
 	}
 }
 
-// TestHandler_GetUserByID tests the GetUserByID handler
+// TestHandler_GetUserByID tests the GetUserByID handler.
 func TestHandler_GetUserByID(t *testing.T) {
 	validUUID := uuid.New()
 
@@ -201,7 +204,7 @@ func TestHandler_GetUserByID(t *testing.T) {
 			name:   "Success - Get user by valid ID",
 			userID: validUUID.String(),
 			setupMock: func(m *MockService) {
-				user := &User{
+				user := &user.User{
 					ID:    validUUID,
 					Name:  "Test User",
 					Email: "test@example.com",
@@ -215,7 +218,7 @@ func TestHandler_GetUserByID(t *testing.T) {
 		{
 			name:   "Error - Invalid UUID format",
 			userID: "invalid-uuid",
-			setupMock: func(m *MockService) {
+			setupMock: func(_ *MockService) {
 				// No mock setup needed as validation happens before service call
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -225,7 +228,7 @@ func TestHandler_GetUserByID(t *testing.T) {
 			name:   "Error - User not found",
 			userID: validUUID.String(),
 			setupMock: func(m *MockService) {
-				m.On("GetUserByID", mock.Anything, validUUID.String()).Return(nil, ErrUserNotFound)
+				m.On("GetUserByID", mock.Anything, validUUID.String()).Return(nil, user.ErrUserNotFound)
 			},
 			expectedStatus: fiber.StatusNotFound,
 			expectedError:  true,
@@ -250,10 +253,10 @@ func TestHandler_GetUserByID(t *testing.T) {
 
 			app.Get("/users/:userId", handler.GetUserByID)
 
-			req := httptest.NewRequest("GET", "/users/"+tt.userID, nil)
+			req := httptest.NewRequest(http.MethodGet, "/users/"+tt.userID, nil)
 			resp, err := app.Test(req)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
 			if !tt.expectedError && tt.name == "Success - Get user by valid ID" {
@@ -263,7 +266,7 @@ func TestHandler_GetUserByID(t *testing.T) {
 	}
 }
 
-// TestHandler_CreateUser tests the CreateUser handler
+// TestHandler_CreateUser tests the CreateUser handler.
 func TestHandler_CreateUser(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -274,14 +277,14 @@ func TestHandler_CreateUser(t *testing.T) {
 	}{
 		{
 			name: "Success - Create user with valid data",
-			requestBody: CreateUserRequest{
+			requestBody: user.CreateUserRequest{
 				Name:     "New User",
 				Email:    "newuser@example.com",
 				Password: "password123",
 				Role:     "user",
 			},
 			setupMock: func(m *MockService) {
-				createdUser := &User{
+				createdUser := &user.User{
 					ID:    uuid.New(),
 					Name:  "New User",
 					Email: "newuser@example.com",
@@ -296,7 +299,7 @@ func TestHandler_CreateUser(t *testing.T) {
 		{
 			name:        "Error - Invalid JSON body",
 			requestBody: "invalid json",
-			setupMock: func(m *MockService) {
+			setupMock: func(_ *MockService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -304,7 +307,7 @@ func TestHandler_CreateUser(t *testing.T) {
 		},
 		{
 			name: "Error - Email already taken",
-			requestBody: CreateUserRequest{
+			requestBody: user.CreateUserRequest{
 				Name:     "Duplicate User",
 				Email:    "duplicate@example.com",
 				Password: "password123",
@@ -312,14 +315,14 @@ func TestHandler_CreateUser(t *testing.T) {
 			},
 			setupMock: func(m *MockService) {
 				m.On("CreateUser", mock.Anything, mock.AnythingOfType("*user.CreateUserRequest")).
-					Return(nil, ErrEmailTaken)
+					Return(nil, user.ErrEmailTaken)
 			},
 			expectedStatus: fiber.StatusConflict,
 			expectedError:  true,
 		},
 		{
 			name: "Error - Service returns error",
-			requestBody: CreateUserRequest{
+			requestBody: user.CreateUserRequest{
 				Name:     "Error User",
 				Email:    "error@example.com",
 				Password: "password123",
@@ -350,15 +353,15 @@ func TestHandler_CreateUser(t *testing.T) {
 				body = []byte(str)
 			} else {
 				body, err = json.Marshal(tt.requestBody)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
-			req := httptest.NewRequest("POST", "/users", bytes.NewReader(body))
+			req := httptest.NewRequest(http.MethodPost, "/users", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := app.Test(req)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
 			if !tt.expectedError {
@@ -368,7 +371,7 @@ func TestHandler_CreateUser(t *testing.T) {
 	}
 }
 
-// TestHandler_UpdateUser tests the UpdateUser handler
+// TestHandler_UpdateUser tests the UpdateUser handler.
 func TestHandler_UpdateUser(t *testing.T) {
 	validUUID := uuid.New()
 
@@ -383,12 +386,12 @@ func TestHandler_UpdateUser(t *testing.T) {
 		{
 			name:   "Success - Update user with valid data",
 			userID: validUUID.String(),
-			requestBody: UpdateUserRequest{
+			requestBody: user.UpdateUserRequest{
 				Name:  "Updated Name",
 				Email: "updated@example.com",
 			},
 			setupMock: func(m *MockService) {
-				updatedUser := &User{
+				updatedUser := &user.User{
 					ID:    validUUID,
 					Name:  "Updated Name",
 					Email: "updated@example.com",
@@ -403,8 +406,8 @@ func TestHandler_UpdateUser(t *testing.T) {
 		{
 			name:        "Error - Invalid UUID",
 			userID:      "invalid-uuid",
-			requestBody: UpdateUserRequest{Name: "Test"},
-			setupMock: func(m *MockService) {
+			requestBody: user.UpdateUserRequest{Name: "Test"},
+			setupMock: func(_ *MockService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -414,7 +417,7 @@ func TestHandler_UpdateUser(t *testing.T) {
 			name:        "Error - Invalid JSON body",
 			userID:      validUUID.String(),
 			requestBody: "invalid json",
-			setupMock: func(m *MockService) {
+			setupMock: func(_ *MockService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -423,12 +426,12 @@ func TestHandler_UpdateUser(t *testing.T) {
 		{
 			name:   "Error - User not found",
 			userID: validUUID.String(),
-			requestBody: UpdateUserRequest{
+			requestBody: user.UpdateUserRequest{
 				Name: "Updated Name",
 			},
 			setupMock: func(m *MockService) {
 				m.On("UpdateUser", mock.Anything, mock.AnythingOfType("*user.UpdateUserRequest"), validUUID.String()).
-					Return(nil, ErrUserNotFound)
+					Return(nil, user.ErrUserNotFound)
 			},
 			expectedStatus: fiber.StatusNotFound,
 			expectedError:  true,
@@ -436,12 +439,12 @@ func TestHandler_UpdateUser(t *testing.T) {
 		{
 			name:   "Error - Email already taken",
 			userID: validUUID.String(),
-			requestBody: UpdateUserRequest{
+			requestBody: user.UpdateUserRequest{
 				Email: "taken@example.com",
 			},
 			setupMock: func(m *MockService) {
 				m.On("UpdateUser", mock.Anything, mock.AnythingOfType("*user.UpdateUserRequest"), validUUID.String()).
-					Return(nil, ErrEmailTaken)
+					Return(nil, user.ErrEmailTaken)
 			},
 			expectedStatus: fiber.StatusConflict,
 			expectedError:  true,
@@ -464,15 +467,15 @@ func TestHandler_UpdateUser(t *testing.T) {
 				body = []byte(str)
 			} else {
 				body, err = json.Marshal(tt.requestBody)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
-			req := httptest.NewRequest("PATCH", "/users/"+tt.userID, bytes.NewReader(body))
+			req := httptest.NewRequest(http.MethodPatch, "/users/"+tt.userID, bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := app.Test(req)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
 			if !tt.expectedError {
@@ -482,7 +485,7 @@ func TestHandler_UpdateUser(t *testing.T) {
 	}
 }
 
-// TestHandler_DeleteUser tests the DeleteUser handler
+// TestHandler_DeleteUser tests the DeleteUser handler.
 func TestHandler_DeleteUser(t *testing.T) {
 	validUUID := uuid.New()
 
@@ -505,7 +508,7 @@ func TestHandler_DeleteUser(t *testing.T) {
 		{
 			name:   "Error - Invalid UUID",
 			userID: "invalid-uuid",
-			setupMock: func(m *MockService) {
+			setupMock: func(_ *MockService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -515,7 +518,7 @@ func TestHandler_DeleteUser(t *testing.T) {
 			name:   "Error - User not found",
 			userID: validUUID.String(),
 			setupMock: func(m *MockService) {
-				m.On("DeleteUser", mock.Anything, validUUID.String()).Return(ErrUserNotFound)
+				m.On("DeleteUser", mock.Anything, validUUID.String()).Return(user.ErrUserNotFound)
 			},
 			expectedStatus: fiber.StatusNotFound,
 			expectedError:  true,
@@ -540,10 +543,10 @@ func TestHandler_DeleteUser(t *testing.T) {
 
 			app.Delete("/users/:userId", handler.DeleteUser)
 
-			req := httptest.NewRequest("DELETE", "/users/"+tt.userID, nil)
+			req := httptest.NewRequest(http.MethodDelete, "/users/"+tt.userID, nil)
 			resp, err := app.Test(req)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
 			if !tt.expectedError {

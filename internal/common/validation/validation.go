@@ -7,18 +7,21 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-var customMessages = map[string]string{
-	"required": "Field %s must be filled",
-	"email":    "Invalid email address for field %s",
-	"min":      "Field %s must have a minimum length of %s characters",
-	"max":      "Field %s must have a maximum length of %s characters",
-	"len":      "Field %s must be exactly %s characters long",
-	"number":   "Field %s must be a number",
-	"positive": "Field %s must be a positive number",
-	"alphanum": "Field %s must contain only alphanumeric characters",
-	"oneof":    "Invalid value for field %s",
-	"password": "Field %s must contain at least 1 letter and 1 number",
-	"role":     "Invalid role for field %s",
+// getCustomMessages returns the custom validation error messages.
+func getCustomMessages() map[string]string {
+	return map[string]string{
+		"required": "Field %s must be filled",
+		"email":    "Invalid email address for field %s",
+		"min":      "Field %s must have a minimum length of %s characters",
+		"max":      "Field %s must have a maximum length of %s characters",
+		"len":      "Field %s must be exactly %s characters long",
+		"number":   "Field %s must be a number",
+		"positive": "Field %s must be a positive number",
+		"alphanum": "Field %s must contain only alphanumeric characters",
+		"oneof":    "Invalid value for field %s",
+		"password": "Field %s must contain at least 1 letter and 1 number",
+		"role":     "Invalid role for field %s",
+	}
 }
 
 // CustomErrorMessages converts validation errors to user-friendly messages.
@@ -32,6 +35,7 @@ func CustomErrorMessages(err error) map[string]string {
 
 func generateErrorMessages(validationErrors validator.ValidationErrors) map[string]string {
 	errorsMap := make(map[string]string)
+	customMessages := getCustomMessages()
 	for _, err := range validationErrors {
 		fieldName := err.StructNamespace()
 		tag := err.Tag()

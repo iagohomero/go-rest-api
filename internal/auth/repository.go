@@ -8,7 +8,6 @@ import (
 	"go-rest-api/internal/common/logger"
 	"go-rest-api/internal/user"
 
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -23,14 +22,14 @@ type Repository interface {
 
 type repository struct {
 	db  *gorm.DB
-	log *logrus.Logger
+	log *logger.Logger
 }
 
 // NewRepository creates a new authentication repository instance.
 func NewRepository(db *gorm.DB) Repository {
 	return &repository{
 		db:  db,
-		log: logger.Log,
+		log: logger.New(),
 	}
 }
 

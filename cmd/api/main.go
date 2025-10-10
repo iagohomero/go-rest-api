@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	_ "go-rest-api/api/swagger"
 	"go-rest-api/internal/common/logger"
 	"go-rest-api/internal/config"
 	"go-rest-api/internal/database"
@@ -24,16 +24,16 @@ import (
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		logger.Log.Fatalf("Failed to load configuration: %v", err)
+		logger.New().Fatalf("Failed to load configuration: %v", err)
 	}
 
 	db, err := database.Connect(cfg)
 	if err != nil {
-		logger.Log.Fatalf("Failed to connect to database: %v", err)
+		logger.New().Fatalf("Failed to connect to database: %v", err)
 	}
 	defer func() {
-		if err := database.Close(db); err != nil {
-			logger.Log.Errorf("Error closing database: %v", err)
+		if closeErr := database.Close(db); closeErr != nil {
+			logger.New().Errorf("Error closing database: %v", closeErr)
 		}
 	}()
 
@@ -41,8 +41,8 @@ func main() {
 	srv.SetupRoutes()
 
 	go func() {
-		if err := srv.Start(); err != nil {
-			logger.Log.Fatalf("Server error: %v", err)
+		if startErr := srv.Start(); startErr != nil {
+			logger.New().Fatalf("Server error: %v", startErr)
 		}
 	}()
 
@@ -50,14 +50,15 @@ func main() {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	logger.Log.Info("Received shutdown signal")
+	logger.New().Info("Received shutdown signal")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10)
+	const shutdownTimeout = 10 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
-		logger.Log.Fatalf("Server forced to shutdown: %v", err)
+	if shutdownErr := srv.Shutdown(ctx); shutdownErr != nil {
+		logger.New().Fatalf("Server forced to shutdown: %v", shutdownErr)
 	}
 
-	logger.Log.Info("Server exited successfully")
+	logger.New().Info("Server exited successfully")
 }

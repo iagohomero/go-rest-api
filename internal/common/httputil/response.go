@@ -4,8 +4,8 @@ import "github.com/gofiber/fiber/v2"
 
 // Common represents a standard HTTP response.
 type Common struct {
-	Code    int    `json:"code" example:"200"`
-	Status  string `json:"status" example:"success"`
+	Code    int    `json:"code"    example:"200"`
+	Status  string `json:"status"  example:"success"`
 	Message string `json:"message" example:"Operation completed successfully"`
 }
 

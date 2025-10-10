@@ -9,11 +9,18 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 )
 
+const (
+	// MaxRequests is the maximum number of requests per time window.
+	MaxRequests = 20
+	// ExpirationMin is the time window in minutes for rate limiting.
+	ExpirationMin = 15
+)
+
 // LimiterConfig returns a configured rate limiter middleware (20 requests per 15 minutes).
 func LimiterConfig() fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        20,
-		Expiration: 15 * time.Minute,
+		Max:        MaxRequests,
+		Expiration: ExpirationMin * time.Minute,
 		LimitReached: func(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusTooManyRequests).
 				JSON(httputil.Common{

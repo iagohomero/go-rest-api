@@ -1,4 +1,4 @@
-package user
+package user_test
 
 import (
 	"context"
@@ -9,11 +9,14 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"go-rest-api/internal/user"
 )
 
-// setupMockDB creates a mock database connection for testing
+// setupMockDB creates a mock database connection for testing.
 func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	sqlDB, mock, err := sqlmock.New()
 	if err != nil {
@@ -37,17 +40,17 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	return db, mock, cleanup
 }
 
-// TestNewRepository tests the repository constructor
+// TestNewRepository tests the repository constructor.
 func TestNewRepository(t *testing.T) {
 	db, _, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	repo := NewRepository(db)
+	repo := user.NewRepository(db)
 
 	assert.NotNil(t, repo)
 }
 
-// TestFindAll tests the FindAll repository method
+// TestFindAll tests the FindAll repository method.
 func TestFindAll(t *testing.T) {
 	ctx := context.Background()
 
@@ -115,7 +118,9 @@ func TestFindAll(t *testing.T) {
 			offset: 0,
 			search: "nonexistent",
 			setupMock: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "name", "email", "password", "role", "verified_email", "created_at", "updated_at"})
+				rows := sqlmock.NewRows(
+					[]string{"id", "name", "email", "password", "role", "verified_email", "created_at", "updated_at"},
+				)
 
 				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE name ILIKE $1 OR email ILIKE $2 OR role ILIKE $3 ORDER BY created_at asc LIMIT $4`)).
 					WithArgs("%nonexistent%", "%nonexistent%", "%nonexistent%", 10).
@@ -146,14 +151,14 @@ func TestFindAll(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			users, err := repo.FindAll(ctx, tt.limit, tt.offset, tt.search)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, users)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, users, tt.expectedCount)
 			}
 
@@ -162,7 +167,7 @@ func TestFindAll(t *testing.T) {
 	}
 }
 
-// TestCount tests the Count repository method
+// TestCount tests the Count repository method.
 func TestCount(t *testing.T) {
 	ctx := context.Background()
 
@@ -230,14 +235,14 @@ func TestCount(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			count, err := repo.Count(ctx, tt.search)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Equal(t, int64(0), count)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedCount, count)
 			}
 
@@ -246,7 +251,7 @@ func TestCount(t *testing.T) {
 	}
 }
 
-// TestFindByID tests the FindByID repository method
+// TestFindByID tests the FindByID repository method.
 func TestFindByID(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -278,7 +283,7 @@ func TestFindByID(t *testing.T) {
 					WithArgs(validUUID.String(), 1).
 					WillReturnError(gorm.ErrRecordNotFound)
 			},
-			expectedError: ErrUserNotFound,
+			expectedError: user.ErrUserNotFound,
 		},
 		{
 			name:   "Error - Database error",
@@ -299,14 +304,14 @@ func TestFindByID(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			user, err := repo.FindByID(ctx, tt.userID)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, user)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, user)
 				assert.Equal(t, validUUID, user.ID)
 			}
@@ -316,7 +321,7 @@ func TestFindByID(t *testing.T) {
 	}
 }
 
-// TestFindByEmail tests the FindByEmail repository method
+// TestFindByEmail tests the FindByEmail repository method.
 func TestFindByEmail(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -348,7 +353,7 @@ func TestFindByEmail(t *testing.T) {
 					WithArgs("notfound@example.com", 1).
 					WillReturnError(gorm.ErrRecordNotFound)
 			},
-			expectedError: ErrUserNotFound,
+			expectedError: user.ErrUserNotFound,
 		},
 		{
 			name:  "Error - Database error",
@@ -369,14 +374,14 @@ func TestFindByEmail(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			user, err := repo.FindByEmail(ctx, tt.email)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, user)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, user)
 				assert.Equal(t, tt.email, user.Email)
 			}
@@ -386,19 +391,19 @@ func TestFindByEmail(t *testing.T) {
 	}
 }
 
-// TestCreate tests the Create repository method
+// TestCreate tests the Create repository method.
 func TestCreate(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
 		name          string
-		user          *User
+		user          *user.User
 		setupMock     func(sqlmock.Sqlmock)
 		expectedError error
 	}{
 		{
 			name: "Success - Create user",
-			user: &User{
+			user: &user.User{
 				Name:     "New User",
 				Email:    "newuser@example.com",
 				Password: "hashedpass",
@@ -414,7 +419,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			name: "Error - Email already taken (duplicate key)",
-			user: &User{
+			user: &user.User{
 				Name:     "Duplicate User",
 				Email:    "duplicate@example.com",
 				Password: "hashedpass",
@@ -426,11 +431,11 @@ func TestCreate(t *testing.T) {
 					WillReturnError(gorm.ErrDuplicatedKey)
 				mock.ExpectRollback()
 			},
-			expectedError: ErrEmailTaken,
+			expectedError: user.ErrEmailTaken,
 		},
 		{
 			name: "Error - Database error",
-			user: &User{
+			user: &user.User{
 				Name:     "Error User",
 				Email:    "error@example.com",
 				Password: "hashedpass",
@@ -453,16 +458,16 @@ func TestCreate(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			err := repo.Create(ctx, tt.user)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tt.name == "Error - Email already taken (duplicate key)" {
-					assert.Equal(t, ErrEmailTaken, err)
+					assert.Equal(t, user.ErrEmailTaken, err)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			assert.NoError(t, mock.ExpectationsWereMet())
@@ -470,7 +475,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-// TestUpdate tests the Update repository method
+// TestUpdate tests the Update repository method.
 func TestUpdate(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -478,7 +483,7 @@ func TestUpdate(t *testing.T) {
 	tests := []struct {
 		name              string
 		userID            string
-		user              *User
+		user              *user.User
 		setupMock         func(sqlmock.Sqlmock)
 		expectedRowsAffec int64
 		expectedError     error
@@ -486,7 +491,7 @@ func TestUpdate(t *testing.T) {
 		{
 			name:   "Success - Update user",
 			userID: validUUID.String(),
-			user: &User{
+			user: &user.User{
 				Name:  "Updated Name",
 				Email: "updated@example.com",
 			},
@@ -503,7 +508,7 @@ func TestUpdate(t *testing.T) {
 		{
 			name:   "Success - No rows affected (user not found)",
 			userID: validUUID.String(),
-			user: &User{
+			user: &user.User{
 				Name: "Updated Name",
 			},
 			setupMock: func(mock sqlmock.Sqlmock) {
@@ -519,7 +524,7 @@ func TestUpdate(t *testing.T) {
 		{
 			name:   "Error - Email already taken",
 			userID: validUUID.String(),
-			user: &User{
+			user: &user.User{
 				Email: "taken@example.com",
 			},
 			setupMock: func(mock sqlmock.Sqlmock) {
@@ -530,12 +535,12 @@ func TestUpdate(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			expectedRowsAffec: 0,
-			expectedError:     ErrEmailTaken,
+			expectedError:     user.ErrEmailTaken,
 		},
 		{
 			name:   "Error - Database error",
 			userID: validUUID.String(),
-			user: &User{
+			user: &user.User{
 				Name: "Error Name",
 			},
 			setupMock: func(mock sqlmock.Sqlmock) {
@@ -557,14 +562,14 @@ func TestUpdate(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			rowsAffected, err := repo.Update(ctx, tt.userID, tt.user)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Equal(t, int64(0), rowsAffected)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedRowsAffec, rowsAffected)
 			}
 
@@ -573,7 +578,7 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
-// TestUpdateFields tests the UpdateFields repository method
+// TestUpdateFields tests the UpdateFields repository method.
 func TestUpdateFields(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -642,14 +647,14 @@ func TestUpdateFields(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			rowsAffected, err := repo.UpdateFields(ctx, tt.userID, tt.updates)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Equal(t, int64(0), rowsAffected)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedRowsAffec, rowsAffected)
 			}
 
@@ -658,7 +663,7 @@ func TestUpdateFields(t *testing.T) {
 	}
 }
 
-// TestDelete tests the Delete repository method
+// TestDelete tests the Delete repository method.
 func TestDelete(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
@@ -718,14 +723,14 @@ func TestDelete(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			rowsAffected, err := repo.Delete(ctx, tt.userID)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Equal(t, int64(0), rowsAffected)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedRowsAffec, rowsAffected)
 			}
 
@@ -734,20 +739,20 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-// TestSave tests the Save repository method
+// TestSave tests the Save repository method.
 func TestSave(t *testing.T) {
 	ctx := context.Background()
 	validUUID := uuid.New()
 
 	tests := []struct {
 		name          string
-		user          *User
+		user          *user.User
 		setupMock     func(sqlmock.Sqlmock)
 		expectedError bool
 	}{
 		{
 			name: "Success - Save new user",
-			user: &User{
+			user: &user.User{
 				Name:     "New User",
 				Email:    "new@example.com",
 				Password: "hashedpass",
@@ -763,7 +768,7 @@ func TestSave(t *testing.T) {
 		},
 		{
 			name: "Success - Save existing user",
-			user: &User{
+			user: &user.User{
 				ID:       validUUID,
 				Name:     "Updated User",
 				Email:    "updated@example.com",
@@ -780,7 +785,7 @@ func TestSave(t *testing.T) {
 		},
 		{
 			name: "Error - Database error",
-			user: &User{
+			user: &user.User{
 				Name:     "Error User",
 				Email:    "error@example.com",
 				Password: "hashedpass",
@@ -803,13 +808,13 @@ func TestSave(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			repo := NewRepository(db)
+			repo := user.NewRepository(db)
 			err := repo.Save(ctx, tt.user)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			assert.NoError(t, mock.ExpectationsWereMet())
