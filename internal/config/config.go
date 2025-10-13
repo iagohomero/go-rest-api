@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -99,11 +98,13 @@ func (j JWTConfig) VerifyEmailTokenDuration() time.Duration {
 	return time.Duration(j.VerifyEmailExpMin) * time.Minute
 }
 
-// Load loads configuration from .env file.
+// Load loads configuration from environment variables and .env file.
 func Load() (*Config, error) {
-	if err := loadConfigFile(); err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
-	}
+	// Enable automatic environment variable reading
+	viper.AutomaticEnv()
+
+	// Try to load .env file (optional for development)
+	loadConfigFile()
 
 	cfg := &Config{
 		App: AppConfig{
@@ -143,20 +144,24 @@ func Load() (*Config, error) {
 	return cfg, nil
 }
 
-func loadConfigFile() error {
+func loadConfigFile() {
 	configPaths := []string{
 		"./",     // For app
 		"../../", // For test folder
 	}
 
+	configLoaded := false
 	for _, path := range configPaths {
 		viper.SetConfigFile(path + ".env")
 
 		if err := viper.ReadInConfig(); err == nil {
 			logger.New().Infof("Config file loaded from %s", path)
-			return nil
+			configLoaded = true
+			break
 		}
 	}
 
-	return errors.New("no config file found")
+	if !configLoaded {
+		logger.New().Info("No .env file found, using environment variables")
+	}
 }
