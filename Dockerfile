@@ -12,7 +12,7 @@ RUN apk add --no-cache curl
 
 WORKDIR /root
 COPY --from=build /app/main .
-# Copy .env file if it exists, otherwise create a default one
+# Copy .env file if it exists (optional for development)
 COPY --from=build /app/.env* ./
 
 EXPOSE 8080
