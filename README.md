@@ -93,7 +93,7 @@ This project leverages modern Go libraries and tools to provide a robust foundat
 - ✅ **Password Recovery Flow** - Secure password reset with email verification
 - ✅ **Email Service** - Transactional email support with SMTP configuration
 - ✅ **API Documentation** - Auto-generated Swagger/OpenAPI documentation
-- ✅ **Database Migrations** - Version-controlled database schema management
+- ✅ **Automated Database Migrations** - Migrations run automatically on application startup
 - ✅ **Clean Architecture** - Well-organized, maintainable codebase structure
 - ✅ **Middleware Support** - Authentication, logging, rate limiting, and recovery middleware
 - ✅ **Docker Support** - Full Docker and Docker Compose configuration
@@ -196,12 +196,7 @@ Before you begin, ensure you have the following installed:
    REDIRECT_URL=http://localhost:8080/v1/auth/google-callback
    ```
 
-5. **Run database migrations**
-   ```sh
-   make migrate-up
-   ```
-
-6. **Build and run the application**
+5. **Build and run the application** (migrations run automatically)
    ```sh
    make run
    ```
@@ -211,7 +206,7 @@ Before you begin, ensure you have the following installed:
    make dev
    ```
 
-7. **Verify the installation**
+6. **Verify the installation**
    ```sh
    curl http://localhost:8080/v1/health
    ```
@@ -241,10 +236,7 @@ Before you begin, ensure you have the following installed:
    - Adminer (database management UI at http://localhost:8081)
    - The Go API application
 
-4. **Run database migrations**
-   ```sh
-   make docker-migrate-up
-   ```
+4. **Database migrations run automatically** - No manual migration step needed! The application will automatically run all pending migrations when it starts.
 
 5. **Verify the installation**
    ```sh
@@ -317,10 +309,12 @@ make docker-logs      # View Docker logs
 
 # Database Migrations
 make migrate-create name=migration_name   # Create new migration
-make migrate-up                           # Run all pending migrations
-make migrate-down                         # Rollback last migration
-make docker-migrate-up                    # Run all pending migrations using Docker
-make docker-migrate-down                  # Rollback last migration using Docker
+make migrate-up                           # Run all pending migrations (development only)
+make migrate-down                         # Rollback last migration (development only)
+make docker-migrate-up                    # Run all pending migrations using Docker (development only)
+make docker-migrate-down                  # Rollback last migration using Docker (development only)
+
+# Note: In production, migrations run automatically when the application starts
 
 # Documentation
 make swag             # Generate/update Swagger documentation

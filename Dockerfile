@@ -2,6 +2,8 @@ FROM golang:1.24.0 AS build
 
 WORKDIR /app
 COPY . .
+# Copy migrations directory for embedding
+COPY migrations/ ./migrations/
 RUN go clean --modcache
 RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -o main cmd/api/main.go
