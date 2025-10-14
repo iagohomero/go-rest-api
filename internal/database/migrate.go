@@ -1,13 +1,14 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 
 	"go-rest-api/internal/common/logger"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/source/file" // Required for file-based migrations
 	"gorm.io/gorm"
 )
 
@@ -36,12 +37,12 @@ func RunMigrations(db *gorm.DB) error {
 	}
 
 	// Run migrations
-	if err := m.Up(); err != nil {
-		if err == migrate.ErrNoChange {
+	if migrationErr := m.Up(); migrationErr != nil {
+		if errors.Is(migrationErr, migrate.ErrNoChange) {
 			logger.New().Info("No pending migrations to run")
 			return nil
 		}
-		return fmt.Errorf("failed to run migrations: %w", err)
+		return fmt.Errorf("failed to run migrations: %w", migrationErr)
 	}
 
 	logger.New().Info("Database migrations completed successfully")
