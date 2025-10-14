@@ -14,6 +14,8 @@ RUN apk add --no-cache curl
 
 WORKDIR /root
 COPY --from=build /app/main .
+# Copy migrations directory for runtime access
+COPY --from=build /app/migrations ./migrations
 # Copy .env file if it exists (optional for development)
 COPY --from=build /app/.env* ./
 
