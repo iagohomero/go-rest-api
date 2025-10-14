@@ -67,7 +67,7 @@ func (s *Server) SetupRoutes() {
 	authHandler := auth.NewHandler(authService, userService, emailService, s.cfg)
 	userHandler := user.NewHandler(userService)
 
-	v1 := s.app.Group("/v1")
+	v1 := s.app.Group("/api/v1")
 	v1.Use("/auth", middleware.LimiterConfig())
 
 	authMiddlewareFunc := func(permissions ...string) fiber.Handler {
