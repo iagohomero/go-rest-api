@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	swaggerdocs "go-rest-api/api/swagger"
 	"go-rest-api/internal/auth"
 	"go-rest-api/internal/common/httputil"
 	"go-rest-api/internal/common/logger"
@@ -50,6 +51,9 @@ func New(cfg *config.Config, db *gorm.DB) *Server {
 
 // SetupRoutes initializes all application routes and handlers.
 func (s *Server) SetupRoutes() {
+	// Configure Swagger host dynamically
+	swaggerdocs.SwaggerInfo.Host = s.cfg.App.SwaggerHostWithFallback()
+
 	validate := validation.New()
 
 	healthcheckService := healthcheck.NewService(s.db)

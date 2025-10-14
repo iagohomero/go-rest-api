@@ -24,6 +24,7 @@ type AppConfig struct {
 	Host        string
 	Port        int
 	Name        string
+	SwaggerHost string
 }
 
 // DatabaseConfig holds database connection configuration.
@@ -70,6 +71,14 @@ func (a AppConfig) IsProd() bool {
 	return a.Environment == "prod" || a.Environment == "production"
 }
 
+// SwaggerHostWithFallback returns the Swagger host with fallback to localhost:8080.
+func (a AppConfig) SwaggerHostWithFallback() string {
+	if a.SwaggerHost != "" {
+		return a.SwaggerHost
+	}
+	return "localhost:8080"
+}
+
 // DSN returns the PostgreSQL connection string.
 func (d DatabaseConfig) DSN() string {
 	return fmt.Sprintf(
@@ -112,6 +121,7 @@ func Load() (*Config, error) {
 			Host:        viper.GetString("APP_HOST"),
 			Port:        viper.GetInt("APP_PORT"),
 			Name:        "go-rest-api",
+			SwaggerHost: viper.GetString("SWAGGER_HOST"),
 		},
 		Database: DatabaseConfig{
 			Host:     viper.GetString("DB_HOST"),
