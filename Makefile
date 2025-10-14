@@ -1,4 +1,4 @@
-.PHONY: help dev build run test test-coverage lint docker-build docker-up docker-down migrate-up migrate-down docker-migrate-up docker-migrate-down swag clean deps
+.PHONY: help dev build run test test-coverage test-e2e lint docker-build docker-up docker-down migrate-up migrate-down docker-migrate-up docker-migrate-down swag clean deps
 
 include .env
 export
@@ -34,15 +34,25 @@ run: build ## Run the built application
 	@echo "${GREEN}Starting application...${NC}"
 	@./bin/$(APP_NAME)
 
-test: ## Run tests
-	@echo "${GREEN}Running tests...${NC}"
-	@$(GOTEST) -race ./...
+test: test-unit test-e2e ## Run all tests (unit + e2e)
 
-test-coverage: ## Run tests with coverage
-	@echo "${GREEN}Running tests with coverage...${NC}"
-	@$(GOTEST) -race -coverprofile=coverage.out ./...
+test-unit: ## Run unit tests only
+	@echo "${GREEN}Running unit tests...${NC}"
+	@$(GOTEST) -race -v ./internal/...
+	@echo "${GREEN}Unit tests complete${NC}"
+
+test-unit-coverage: ## Run unit tests with coverage
+	@echo "${GREEN}Running unit tests with coverage...${NC}"
+	@$(GOTEST) -race -coverprofile=coverage.out -covermode=atomic ./internal/...
 	@$(GOCOVER) -html=coverage.out -o coverage.html
 	@echo "${GREEN}Coverage report generated: coverage.html${NC}"
+
+test-e2e: ## Run end-to-end tests with testcontainers
+	@echo "${GREEN}Running e2e tests with testcontainers...${NC}"
+	@$(GOTEST) -v ./test/e2e/...
+	@echo "${GREEN}E2E tests complete${NC}"
+
+test-coverage: test-unit-coverage ## Alias for test-unit-coverage
 
 lint: ## Run linter (requires golangci-lint)
 	@echo "${GREEN}Running linter...${NC}"
