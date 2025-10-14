@@ -16,7 +16,6 @@ import (
 
 // @title go-rest-api API documentation
 // @version 1.0.0
-// @host localhost:8080
 // @BasePath /v1
 // @securityDefinitions.apikey BearerAuth
 // @in header
