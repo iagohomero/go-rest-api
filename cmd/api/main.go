@@ -38,8 +38,8 @@ func main() {
 	}()
 
 	// Run database migrations before starting the server
-	if err := database.RunMigrations(db); err != nil {
-		logger.New().Fatalf("Failed to run database migrations: %v", err)
+	if migrationErr := database.RunMigrations(db); migrationErr != nil {
+		logger.New().Fatalf("Failed to run database migrations: %v", migrationErr)
 	}
 
 	srv := server.New(cfg, db)

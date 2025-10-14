@@ -1,3 +1,4 @@
+//nolint:testpackage // E2E tests need access to internal packages
 package e2e
 
 import (
@@ -18,8 +19,8 @@ func TestHealthCheck(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&result); decodeErr != nil {
+		t.Fatalf("Failed to decode response: %v", decodeErr)
 	}
 
 	// Check if response contains expected health check fields

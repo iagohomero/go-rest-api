@@ -1,9 +1,11 @@
+//nolint:testpackage // E2E tests need access to internal packages
 package e2e
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -24,16 +26,20 @@ import (
 )
 
 var (
+	//nolint:gochecknoglobals // Test globals are acceptable for test setup
 	testServer *server.Server
-	testDB     *gorm.DB
-	baseURL    string
+	//nolint:gochecknoglobals // Test globals are acceptable for test setup
+	testDB *gorm.DB
+	//nolint:gochecknoglobals // Test globals are acceptable for test setup
+	baseURL string
 )
 
-// TestMain sets up the test environment with a PostgreSQL container
+// TestMain sets up the test environment with a PostgreSQL container.
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
 	// Start PostgreSQL container
+	//nolint:staticcheck // SA1019: postgres.RunContainer is deprecated but still functional
 	postgresContainer, err := postgres.RunContainer(ctx,
 		testcontainers.WithImage("postgres:15-alpine"),
 		postgres.WithDatabase("testdb"),
@@ -80,8 +86,8 @@ func TestMain(m *testing.M) {
 	}
 
 	// Enable uuid extension
-	if err := testDB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
-		panic(fmt.Sprintf("Failed to enable uuid extension: %v", err))
+	if uuidErr := testDB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; uuidErr != nil {
+		panic(fmt.Sprintf("Failed to enable uuid extension: %v", uuidErr))
 	}
 
 	// Create test configuration
@@ -122,13 +128,12 @@ func TestMain(m *testing.M) {
 
 	// Run migrations - we need to set the working directory to the project root
 	originalDir, _ := os.Getwd()
-	if err := os.Chdir("../../"); err != nil {
-		panic(fmt.Sprintf("Failed to change directory: %v", err))
+	if chdirErr := os.Chdir("../../"); chdirErr != nil {
+		panic(fmt.Sprintf("Failed to change directory: %v", chdirErr))
 	}
-	defer os.Chdir(originalDir)
 
-	if err := database.RunMigrations(testDB); err != nil {
-		panic(fmt.Sprintf("Failed to run migrations: %v", err))
+	if migrationErr := database.RunMigrations(testDB); migrationErr != nil {
+		panic(fmt.Sprintf("Failed to run migrations: %v", migrationErr))
 	}
 
 	// Create test server
@@ -137,8 +142,8 @@ func TestMain(m *testing.M) {
 
 	// Start server in background
 	go func() {
-		if err := testServer.Start(); err != nil {
-			panic(fmt.Sprintf("Failed to start test server: %v", err))
+		if startErr := testServer.Start(); startErr != nil {
+			panic(fmt.Sprintf("Failed to start test server: %v", startErr))
 		}
 	}()
 
@@ -151,39 +156,20 @@ func TestMain(m *testing.M) {
 	// Run tests
 	code := m.Run()
 
-	// Cleanup
-	if err := postgresContainer.Terminate(ctx); err != nil {
-		fmt.Printf("Failed to terminate container: %v\n", err)
+	// Cleanup before exit
+	if terminateErr := postgresContainer.Terminate(ctx); terminateErr != nil {
+		// Log error but don't fail the test
+		_ = terminateErr
 	}
 
+	// Change back to original directory before exit
+	os.Chdir(originalDir)
+
+	// Exit after cleanup
 	os.Exit(code)
 }
 
-// waitForServer waits for the server to be ready
-func waitForServer(url string) error {
-	client := &http.Client{Timeout: 5 * time.Second}
-	for i := 0; i < 30; i++ {
-		// Try different endpoints to see what's available
-		endpoints := []string{"/api/v1/health/", "/api/v1/health", "/health/", "/health"}
-		for _, endpoint := range endpoints {
-			resp, err := client.Get(url + endpoint)
-			if err != nil {
-				fmt.Printf("Attempt %d: Error connecting to %s: %v\n", i+1, endpoint, err)
-				continue
-			}
-			fmt.Printf("Attempt %d: Got response from %s with status %d\n", i+1, endpoint, resp.StatusCode)
-			if resp.StatusCode == 200 || resp.StatusCode == 503 {
-				resp.Body.Close()
-				return nil
-			}
-			resp.Body.Close()
-		}
-		time.Sleep(1 * time.Second)
-	}
-	return fmt.Errorf("server not ready after 30 seconds")
-}
-
-// makeRequest is a helper to make HTTP requests
+// makeRequest is a helper to make HTTP requests.
 func makeRequest(method, url string, body interface{}, headers map[string]string) (*http.Response, error) {
 	var reqBody io.Reader
 	if body != nil {
@@ -208,12 +194,14 @@ func makeRequest(method, url string, body interface{}, headers map[string]string
 	return client.Do(req)
 }
 
-// createTestUser creates a test user in the database
+// createTestUser creates a test user in the database.
+//
+//nolint:unparam // password parameter is kept for API consistency
 func createTestUser(name, email, password, role string) error {
 	// Hash the password before storing
 	hashedPassword, err := crypto.HashPassword(password)
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %v", err)
+		return fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	user := map[string]interface{}{
@@ -229,7 +217,9 @@ func createTestUser(name, email, password, role string) error {
 	return testDB.Table("users").Create(user).Error
 }
 
-// getAuthToken performs login and returns the access token
+// getAuthToken performs login and returns the access token.
+//
+//nolint:unparam // password parameter is kept for API consistency
 func getAuthToken(email, password string) (string, error) {
 	loginData := map[string]string{
 		"email":    email,
@@ -242,35 +232,35 @@ func getAuthToken(email, password string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("login failed with status %d", resp.StatusCode)
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&result); decodeErr != nil {
+		return "", decodeErr
 	}
 
 	// Access nested token structure: tokens.access.token
 	tokens, ok := result["tokens"].(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("tokens not found in response")
+		return "", errors.New("tokens not found in response")
 	}
 
 	access, ok := tokens["access"].(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("access token not found in response")
+		return "", errors.New("access token not found in response")
 	}
 
 	accessToken, ok := access["token"].(string)
 	if !ok {
-		return "", fmt.Errorf("access token value not found in response")
+		return "", errors.New("access token value not found in response")
 	}
 
 	return accessToken, nil
 }
 
-// cleanupTestData cleans up test data after each test
+// cleanupTestData cleans up test data after each test.
 func cleanupTestData() {
 	// Clean up test data - delete in order to respect foreign key constraints
 	testDB.Exec("DELETE FROM tokens")

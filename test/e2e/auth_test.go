@@ -1,3 +1,4 @@
+//nolint:testpackage // E2E tests need access to internal packages
 package e2e
 
 import (
@@ -27,8 +28,8 @@ func TestRegister(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&result); decodeErr != nil {
+		t.Fatalf("Failed to decode response: %v", decodeErr)
 	}
 
 	// Check if response contains expected fields
@@ -104,8 +105,8 @@ func TestLogin(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
+	if loginDecodeErr := json.NewDecoder(resp.Body).Decode(&result); loginDecodeErr != nil {
+		t.Fatalf("Failed to decode response: %v", loginDecodeErr)
 	}
 
 	// Check if response contains tokens in nested structure
@@ -115,10 +116,10 @@ func TestLogin(t *testing.T) {
 		return
 	}
 
-	if _, ok := tokens["access"]; !ok {
+	if _, accessOk := tokens["access"]; !accessOk {
 		t.Error("Expected 'access' field in tokens")
 	}
-	if _, ok := tokens["refresh"]; !ok {
+	if _, refreshOk := tokens["refresh"]; !refreshOk {
 		t.Error("Expected 'refresh' field in tokens")
 	}
 }
@@ -171,8 +172,8 @@ func TestRefreshTokens(t *testing.T) {
 	}
 
 	var loginResult map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&loginResult); err != nil {
-		t.Fatalf("Failed to decode login response: %v", err)
+	if loginDecodeErr := json.NewDecoder(resp.Body).Decode(&loginResult); loginDecodeErr != nil {
+		t.Fatalf("Failed to decode login response: %v", loginDecodeErr)
 	}
 	resp.Body.Close()
 
@@ -208,8 +209,8 @@ func TestRefreshTokens(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
+	if refreshDecodeErr := json.NewDecoder(resp.Body).Decode(&result); refreshDecodeErr != nil {
+		t.Fatalf("Failed to decode response: %v", refreshDecodeErr)
 	}
 
 	// Check if response contains new tokens in nested structure
@@ -219,10 +220,10 @@ func TestRefreshTokens(t *testing.T) {
 		return
 	}
 
-	if _, ok := refreshTokens["access"]; !ok {
+	if _, refreshAccessOk := refreshTokens["access"]; !refreshAccessOk {
 		t.Error("Expected 'access' field in tokens")
 	}
-	if _, ok := refreshTokens["refresh"]; !ok {
+	if _, refreshRefreshOk := refreshTokens["refresh"]; !refreshRefreshOk {
 		t.Error("Expected 'refresh' field in tokens")
 	}
 }

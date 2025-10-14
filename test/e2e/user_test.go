@@ -1,3 +1,4 @@
+//nolint:testpackage // E2E tests need access to internal packages
 package e2e
 
 import (
@@ -36,12 +37,12 @@ func TestGetUsers(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&result); decodeErr != nil {
+		t.Fatalf("Failed to decode response: %v", decodeErr)
 	}
 
 	// Check if response contains users list
-	if _, ok := result["results"]; !ok {
+	if _, resultsOk := result["results"]; !resultsOk {
 		t.Error("Expected 'results' field in response")
 	}
 }
@@ -102,8 +103,8 @@ func TestGetUserByID(t *testing.T) {
 	}
 
 	var usersResult map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&usersResult); err != nil {
-		t.Fatalf("Failed to decode users response: %v", err)
+	if usersDecodeErr := json.NewDecoder(resp.Body).Decode(&usersResult); usersDecodeErr != nil {
+		t.Fatalf("Failed to decode users response: %v", usersDecodeErr)
 	}
 	resp.Body.Close()
 
@@ -130,12 +131,12 @@ func TestGetUserByID(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&result); decodeErr != nil {
+		t.Fatalf("Failed to decode response: %v", decodeErr)
 	}
 
 	// Check if response contains user data
-	if _, ok := result["user"]; !ok {
+	if _, userOk := result["user"]; !userOk {
 		t.Error("Expected 'user' field in response")
 	}
 }
@@ -177,12 +178,12 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&result); decodeErr != nil {
+		t.Fatalf("Failed to decode response: %v", decodeErr)
 	}
 
 	// Check if response contains user data
-	if _, ok := result["user"]; !ok {
+	if _, userOk := result["user"]; !userOk {
 		t.Error("Expected 'user' field in response")
 	}
 }
@@ -218,8 +219,8 @@ func TestUpdateUser(t *testing.T) {
 	}
 
 	var usersResult map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&usersResult); err != nil {
-		t.Fatalf("Failed to decode users response: %v", err)
+	if usersDecodeErr := json.NewDecoder(resp.Body).Decode(&usersResult); usersDecodeErr != nil {
+		t.Fatalf("Failed to decode users response: %v", usersDecodeErr)
 	}
 	resp.Body.Close()
 
@@ -261,12 +262,12 @@ func TestUpdateUser(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&result); decodeErr != nil {
+		t.Fatalf("Failed to decode response: %v", decodeErr)
 	}
 
 	// Check if response contains updated user data
-	if _, ok := result["user"]; !ok {
+	if _, userOk := result["user"]; !userOk {
 		t.Error("Expected 'user' field in response")
 	}
 }
@@ -302,8 +303,8 @@ func TestDeleteUser(t *testing.T) {
 	}
 
 	var usersResult map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&usersResult); err != nil {
-		t.Fatalf("Failed to decode users response: %v", err)
+	if usersDecodeErr := json.NewDecoder(resp.Body).Decode(&usersResult); usersDecodeErr != nil {
+		t.Fatalf("Failed to decode users response: %v", usersDecodeErr)
 	}
 	resp.Body.Close()
 
