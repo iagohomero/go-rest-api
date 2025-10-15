@@ -97,7 +97,7 @@ This project leverages modern Go libraries and tools to provide a robust foundat
 - ✅ **Clean Architecture** - Well-organized, maintainable codebase structure
 - ✅ **Middleware Support** - Authentication, logging, rate limiting, and recovery middleware
 - ✅ **Docker Support** - Full Docker and Docker Compose configuration
-- ✅ **Comprehensive Testing** - Unit and integration tests with coverage reports
+- ✅ **Comprehensive Testing** - Unit tests and end-to-end tests with testcontainers and coverage reports
 - ✅ **Code Quality Assurance** - Configured with golangci-lint for maintaining code standards
 - ✅ **Environment Configuration** - Flexible configuration using Viper
 - ✅ **Graceful Shutdown** - Proper cleanup and connection management
@@ -297,8 +297,10 @@ make build            # Build the application
 make run              # Build and run the application
 
 # Testing
-make test             # Run tests
-make test-coverage    # Run tests with coverage report
+make test             # Run all tests (unit + e2e)
+make test-unit        # Run unit tests only
+make test-unit-coverage # Run unit tests with coverage report
+make test-e2e         # Run end-to-end tests with testcontainers
 make lint             # Run linter
 
 # Docker

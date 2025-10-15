@@ -1,4 +1,3 @@
-//nolint:testpackage // E2E tests need access to internal packages
 package e2e
 
 import (
