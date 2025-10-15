@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Type alias to help with type resolution
+// Type alias to help with type resolution.
 type User = user.User
 
 // MockUserService is a mock implementation of the UserService interface.
@@ -522,8 +522,8 @@ func TestAuth_UserRolePermissions_Forbidden(t *testing.T) {
 	mockUserService.AssertExpectations(t)
 }
 
-// Helper function to generate an expired test JWT token
-func generateExpiredTestJWT(userID, tokenType, secret string) (string, error) {
+// Helper function to generate an expired test JWT token.
+func generateExpiredTestJWT(userID, tokenType, _ string) (string, error) {
 	// This would be an expired token in a real implementation
 	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI" + userID + "iLCJ0eXBlIjoi" + tokenType + "iLCJpYXQiOjE2MzQ1Njc4OTAsImV4cCI6MTYzNDU2Nzg5MH0.expired-signature", nil
 }

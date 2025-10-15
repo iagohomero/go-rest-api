@@ -18,8 +18,8 @@ func GetAuthToken(baseURL, email, password string) (string, error) {
 		return "", fmt.Errorf("login failed with status %d", resp.StatusCode)
 	}
 	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&result); decodeErr != nil {
+		return "", decodeErr
 	}
 	tokens, ok := result["tokens"].(map[string]interface{})
 	if !ok {

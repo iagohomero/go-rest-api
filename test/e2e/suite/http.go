@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+const (
+	// HTTPClientTimeout is the HTTP client timeout.
+	HTTPClientTimeout = 10 * time.Second
+)
+
 func MakeRequest(method, url string, body interface{}, headers map[string]string) (*http.Response, error) {
 	var reqBody io.Reader
 	if body != nil {
@@ -25,6 +30,6 @@ func MakeRequest(method, url string, body interface{}, headers map[string]string
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: HTTPClientTimeout}
 	return client.Do(req)
 }

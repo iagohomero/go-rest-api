@@ -230,7 +230,7 @@ func TestHandler_Check_Concurrent(t *testing.T) {
 	// Run multiple concurrent requests
 	done := make(chan *http.Response, 5)
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		go func() {
 			req := httptest.NewRequest(http.MethodGet, "/health", nil)
 			resp, _ := app.Test(req)
@@ -239,7 +239,7 @@ func TestHandler_Check_Concurrent(t *testing.T) {
 	}
 
 	// Collect responses
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		resp := <-done
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 	}

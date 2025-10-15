@@ -28,10 +28,10 @@ func StartSuite(ctx context.Context) (*Suite, error) {
 		_ = pg.Terminate(ctx)
 		return nil, err
 	}
-	if err := runMigrations(db); err != nil {
+	if migrateErr := runMigrations(db); migrateErr != nil {
 		_ = pg.Terminate(ctx)
 		_ = chdirBack(originalDir)
-		return nil, err
+		return nil, migrateErr
 	}
 
 	mp, mailHTTP, smtpHost, smtpPort, err := startMailpit(ctx)
@@ -43,13 +43,7 @@ func StartSuite(ctx context.Context) (*Suite, error) {
 
 	cfg := buildTestConfig(host, port, smtpHost, smtpPort, mailHTTP)
 
-	srv, baseURL, err := startServer(cfg, db)
-	if err != nil {
-		_ = mp.Terminate(ctx)
-		_ = pg.Terminate(ctx)
-		_ = chdirBack(originalDir)
-		return nil, err
-	}
+	srv, baseURL := startServer(cfg, db)
 
 	// register globals for wrappers
 	setGlobals(pg, mp, db, srv, baseURL, mailHTTP, originalDir)

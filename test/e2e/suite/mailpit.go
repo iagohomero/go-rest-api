@@ -10,12 +10,20 @@ import (
 	"time"
 )
 
+const (
+	// MailpitClientTimeout is the mailpit client timeouts.
+	MailpitClientTimeout = 5 * time.Second
+	MailpitPollDelay     = 300 * time.Millisecond
+	// RegexMatchIndex is the regex match index for token extraction.
+	RegexMatchIndex = 2
+)
+
 func FetchMailpitMessages(mailpitHTTPBaseURL string) ([]map[string]interface{}, error) {
 	req, err := http.NewRequest(http.MethodGet, mailpitHTTPBaseURL+"/api/v1/messages", nil)
 	if err != nil {
 		return nil, err
 	}
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: MailpitClientTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -25,53 +33,95 @@ func FetchMailpitMessages(mailpitHTTPBaseURL string) ([]map[string]interface{}, 
 	var payload struct {
 		Messages []map[string]interface{} `json:"messages"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, err
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&payload); decodeErr != nil {
+		return nil, decodeErr
 	}
 	return payload.Messages, nil
 }
 
-func WaitForMail(mailpitHTTPBaseURL, toContains, subjectContains string, timeout time.Duration) (map[string]interface{}, error) {
+func WaitForMail(
+	mailpitHTTPBaseURL,
+	toContains,
+	subjectContains string,
+	timeout time.Duration,
+) (map[string]interface{}, error) {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		msgs, err := FetchMailpitMessages(mailpitHTTPBaseURL)
-		if err == nil {
-			for _, m := range msgs {
-				subject, _ := m["Subject"].(string)
-				matchesTo := toContains == ""
-				if !matchesTo {
-					if toArr, ok := m["To"].([]interface{}); ok {
-						for _, item := range toArr {
-							switch v := item.(type) {
-							case string:
-								if ContainsFold(v, toContains) {
-									matchesTo = true
-								}
-							case map[string]interface{}:
-								if email, _ := v["Address"].(string); email != "" && ContainsFold(email, toContains) {
-									matchesTo = true
-								}
-								if email, _ := v["Email"].(string); email != "" && ContainsFold(email, toContains) {
-									matchesTo = true
-								}
-							}
-							if matchesTo {
-								break
-							}
-						}
-					} else if toStr, ok := m["To"].(string); ok {
-						matchesTo = ContainsFold(toStr, toContains)
-					}
-				}
-				matchesSubject := subjectContains == "" || (subject != "" && ContainsFold(subject, subjectContains))
-				if matchesTo && matchesSubject {
-					return m, nil
-				}
+		if err != nil {
+			time.Sleep(MailpitPollDelay)
+			continue
+		}
+
+		for _, m := range msgs {
+			if matchesEmailCriteria(m, toContains, subjectContains) {
+				return m, nil
 			}
 		}
-		time.Sleep(300 * time.Millisecond)
+		time.Sleep(MailpitPollDelay)
 	}
-	return nil, fmt.Errorf("mail not received for recipient=%s subject~=%s within %s", toContains, subjectContains, timeout)
+	return nil, fmt.Errorf(
+		"mail not received for recipient=%s subject~=%s within %s",
+		toContains,
+		subjectContains,
+		timeout,
+	)
+}
+
+func matchesEmailCriteria(m map[string]interface{}, toContains, subjectContains string) bool {
+	subject, _ := m["Subject"].(string)
+	matchesTo := matchesToField(m, toContains)
+	matchesSubject := matchesSubjectField(subject, subjectContains)
+	return matchesTo && matchesSubject
+}
+
+func matchesToField(m map[string]interface{}, toContains string) bool {
+	if toContains == "" {
+		return true
+	}
+
+	if toArr, ok := m["To"].([]interface{}); ok {
+		return matchesToArray(toArr, toContains)
+	}
+
+	if toStr, ok := m["To"].(string); ok {
+		return ContainsFold(toStr, toContains)
+	}
+
+	return false
+}
+
+func matchesToArray(toArr []interface{}, toContains string) bool {
+	for _, item := range toArr {
+		if matchesToItem(item, toContains) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchesToItem(item interface{}, toContains string) bool {
+	switch v := item.(type) {
+	case string:
+		return ContainsFold(v, toContains)
+	case map[string]interface{}:
+		return matchesToMap(v, toContains)
+	}
+	return false
+}
+
+func matchesToMap(toMap map[string]interface{}, toContains string) bool {
+	if email, _ := toMap["Address"].(string); email != "" && ContainsFold(email, toContains) {
+		return true
+	}
+	if email, _ := toMap["Email"].(string); email != "" && ContainsFold(email, toContains) {
+		return true
+	}
+	return false
+}
+
+func matchesSubjectField(subject, subjectContains string) bool {
+	return subjectContains == "" || (subject != "" && ContainsFold(subject, subjectContains))
 }
 
 func getMailBodyAny(mailpitHTTPBaseURL, id string) (string, error) {
@@ -79,15 +129,15 @@ func getMailBodyAny(mailpitHTTPBaseURL, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: MailpitClientTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 	var payload map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return "", err
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&payload); decodeErr != nil {
+		return "", decodeErr
 	}
 	if text, ok := payload["Text"].(map[string]interface{}); ok {
 		if b, _ := text["Body"].(string); b != "" {
@@ -107,7 +157,7 @@ func getMailTextBody(mailpitHTTPBaseURL, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: MailpitClientTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -125,7 +175,7 @@ func getMailHTMLBody(mailpitHTTPBaseURL, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: MailpitClientTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -156,8 +206,8 @@ func ExtractTokenFromMessage(mailpitHTTPBaseURL, id string) (string, error) {
 	}
 	req, err := http.NewRequest(http.MethodGet, mailpitHTTPBaseURL+"/api/v1/message/"+id, nil)
 	if err == nil {
-		client := &http.Client{Timeout: 5 * time.Second}
-		if resp, err := client.Do(req); err == nil {
+		client := &http.Client{Timeout: MailpitClientTimeout}
+		if resp, doErr := client.Do(req); doErr == nil {
 			defer resp.Body.Close()
 			b, _ := io.ReadAll(resp.Body)
 			if tok, ok := TryExtractToken(string(b)); ok {
@@ -176,7 +226,7 @@ func TryExtractToken(body string) (string, bool) {
 	}
 	for _, p := range patterns {
 		re := regexp.MustCompile(p)
-		if m := re.FindStringSubmatch(body); len(m) >= 2 {
+		if m := re.FindStringSubmatch(body); len(m) >= RegexMatchIndex {
 			return m[1], true
 		}
 	}

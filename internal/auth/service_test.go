@@ -44,7 +44,11 @@ func (m *MockRepository) DeleteAllTokens(ctx context.Context, userID string) err
 	return args.Error(0)
 }
 
-func (m *MockRepository) FindTokenByTokenAndUserID(ctx context.Context, tokenStr string, userID string) (*auth.TokenDB, error) {
+func (m *MockRepository) FindTokenByTokenAndUserID(
+	ctx context.Context,
+	tokenStr string,
+	userID string,
+) (*auth.TokenDB, error) {
 	args := m.Called(ctx, tokenStr, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -110,7 +114,7 @@ func TestService_Register(t *testing.T) {
 				Email:    "newuser@example.com",
 				Password: "Password123!",
 			},
-			setupMock: func(m *MockRepository, u *MockUserService) {
+			setupMock: func(m *MockRepository, _ *MockUserService) {
 				m.On("CreateUser", ctx, mock.AnythingOfType("*user.User")).Return(nil)
 			},
 			expectedError: nil,
@@ -129,7 +133,7 @@ func TestService_Register(t *testing.T) {
 				Email:    "duplicate@example.com",
 				Password: "Password123!",
 			},
-			setupMock: func(m *MockRepository, u *MockUserService) {
+			setupMock: func(m *MockRepository, _ *MockUserService) {
 				m.On("CreateUser", ctx, mock.AnythingOfType("*user.User")).Return(auth.ErrEmailTaken)
 			},
 			expectedError: auth.ErrEmailTaken,
@@ -153,7 +157,7 @@ func TestService_Register(t *testing.T) {
 				Email:    "test@example.com",
 				Password: "Password123!",
 			},
-			setupMock: func(m *MockRepository, u *MockUserService) {
+			setupMock: func(m *MockRepository, _ *MockUserService) {
 				m.On("CreateUser", ctx, mock.AnythingOfType("*user.User")).
 					Return(errors.New("database error"))
 			},
@@ -323,7 +327,7 @@ func TestService_Logout(t *testing.T) {
 			request: &auth.LogoutRequest{
 				RefreshToken: "invalid-token",
 			},
-			setupMock: func(m *MockRepository) {
+			setupMock: func(_ *MockRepository) {
 				// JWT validation fails before repository is called, so no mock needed
 			},
 			expectedError: auth.ErrTokenNotFound,
@@ -345,12 +349,12 @@ func TestService_Logout(t *testing.T) {
 			service, mockRepo, _ := setupTestService()
 			tt.setupMock(mockRepo)
 
-			err := service.Logout(ctx, tt.request)
+			logoutErr := service.Logout(ctx, tt.request)
 
 			if tt.expectedError != nil {
-				require.Error(t, err)
+				require.Error(t, logoutErr)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, logoutErr)
 			}
 
 			if tt.name != "Error - Validation fails (empty refresh token)" {
@@ -410,7 +414,7 @@ func TestService_RefreshAuth(t *testing.T) {
 			request: &auth.RefreshTokenRequest{
 				RefreshToken: "invalid-token",
 			},
-			setupMock: func(m *MockRepository, u *MockUserService) {
+			setupMock: func(_ *MockRepository, _ *MockUserService) {
 				// JWT validation fails before repository is called, so no mock needed
 			},
 			expectedError: auth.ErrInvalidToken,
@@ -420,7 +424,7 @@ func TestService_RefreshAuth(t *testing.T) {
 			request: &auth.RefreshTokenRequest{
 				RefreshToken: "invalid-token",
 			},
-			setupMock: func(m *MockRepository, u *MockUserService) {
+			setupMock: func(_ *MockRepository, _ *MockUserService) {
 				// JWT validation fails before repository is called, so no mock needed
 			},
 			expectedError: auth.ErrInvalidToken,
@@ -432,13 +436,13 @@ func TestService_RefreshAuth(t *testing.T) {
 			service, mockRepo, mockUserService := setupTestService()
 			tt.setupMock(mockRepo, mockUserService)
 
-			tokens, err := service.RefreshAuth(ctx, tt.request)
+			tokens, refreshErr := service.RefreshAuth(ctx, tt.request)
 
 			if tt.expectedError != nil {
-				require.Error(t, err)
+				require.Error(t, refreshErr)
 				assert.Nil(t, tokens)
 			} else if tt.checkResult != nil {
-				require.NoError(t, err)
+				require.NoError(t, refreshErr)
 				assert.NotNil(t, tokens)
 				tt.checkResult(t, tokens)
 			}
@@ -455,7 +459,11 @@ func TestService_ResetPassword(t *testing.T) {
 	validUUID := uuid.New()
 
 	// Generate a valid JWT token for the success test
-	validToken, err := generateTestJWT(validUUID.String(), auth.TokenTypeResetPassword, "test-secret-key-for-jwt-tokens")
+	validToken, err := generateTestJWT(
+		validUUID.String(),
+		auth.TokenTypeResetPassword,
+		"test-secret-key-for-jwt-tokens",
+	)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -507,7 +515,7 @@ func TestService_ResetPassword(t *testing.T) {
 			request: &user.UpdateUserPasswordRequest{
 				Password: "NewPassword123!",
 			},
-			setupMock: func(m *MockRepository, u *MockUserService) {
+			setupMock: func(_ *MockRepository, _ *MockUserService) {
 				// JWT validation fails before user lookup, so no mock needed
 			},
 			expectedError: auth.ErrInvalidToken,
@@ -519,12 +527,12 @@ func TestService_ResetPassword(t *testing.T) {
 			service, mockRepo, mockUserService := setupTestService()
 			tt.setupMock(mockRepo, mockUserService)
 
-			err := service.ResetPassword(ctx, tt.query, tt.request)
+			resetErr := service.ResetPassword(ctx, tt.query, tt.request)
 
 			if tt.expectedError != nil {
-				require.Error(t, err)
+				require.Error(t, resetErr)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, resetErr)
 			}
 
 			if tt.name != "Error - Invalid token" {
@@ -583,7 +591,7 @@ func TestService_VerifyEmail(t *testing.T) {
 			query: &auth.ResetPasswordRequest{
 				Token: "invalid-token",
 			},
-			setupMock: func(m *MockRepository, u *MockUserService) {
+			setupMock: func(_ *MockRepository, _ *MockUserService) {
 				// JWT validation fails before user lookup, so no mock needed
 			},
 			expectedError: auth.ErrInvalidToken,
@@ -595,12 +603,12 @@ func TestService_VerifyEmail(t *testing.T) {
 			service, mockRepo, mockUserService := setupTestService()
 			tt.setupMock(mockRepo, mockUserService)
 
-			err := service.VerifyEmail(ctx, tt.query)
+			verifyErr := service.VerifyEmail(ctx, tt.query)
 
 			if tt.expectedError != nil {
-				require.Error(t, err)
+				require.Error(t, verifyErr)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, verifyErr)
 			}
 
 			if tt.name != "Error - Invalid token" {
@@ -931,7 +939,7 @@ func TestService_GenerateResetPasswordToken(t *testing.T) {
 			request: &auth.ForgotPasswordRequest{
 				Email: "notfound@example.com",
 			},
-			setupMock: func(m *MockRepository, u *MockUserService) {
+			setupMock: func(_ *MockRepository, u *MockUserService) {
 				u.On("GetUserByEmail", ctx, "notfound@example.com").Return(nil, user.ErrUserNotFound)
 			},
 			expectedError: user.ErrUserNotFound,

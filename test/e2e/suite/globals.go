@@ -10,23 +10,32 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	pgContainer          testcontainers.Container
-	mailpitContainer     testcontainers.Container
-	gormDB               *gorm.DB
-	httpServer           *server.Server
-	suiteBaseURL         string
-	suiteMailpitHTTPBase string
-	originalWD           string
+const (
+	// CleanupDelay is the global cleanup delay.
+	CleanupDelay = 300 * time.Millisecond
 )
 
-func setGlobals(pg testcontainers.Container, mp testcontainers.Container, db *gorm.DB, srv *server.Server, baseURL string, mailHTTP string, cwd string) {
+var (
+	pgContainer      testcontainers.Container
+	mailpitContainer testcontainers.Container
+	gormDB           *gorm.DB
+	httpServer       *server.Server
+	originalWD       string
+)
+
+func setGlobals(
+	pg testcontainers.Container,
+	mp testcontainers.Container,
+	db *gorm.DB,
+	srv *server.Server,
+	_ string,
+	_ string,
+	cwd string,
+) {
 	pgContainer = pg
 	mailpitContainer = mp
 	gormDB = db
 	httpServer = srv
-	suiteBaseURL = baseURL
-	suiteMailpitHTTPBase = mailHTTP
 	originalWD = cwd
 }
 
@@ -43,7 +52,7 @@ func terminateAll(ctx context.Context) {
 		_ = mailpitContainer.Terminate(ctx)
 	}
 	// small delay to free ports
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(CleanupDelay)
 	// restore working directory if changed
 	if originalWD != "" {
 		_ = chdirBack(originalWD)

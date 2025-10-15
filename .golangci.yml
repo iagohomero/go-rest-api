@@ -475,6 +475,17 @@ linters:
           - noctx
           - unqueryvet
           - wrapcheck
+          - mnd
+          - nestif
+          - unparam
+          - unused
+      - path: 'test/e2e/'
+        linters:
+          - testpackage
+          - gochecknoglobals
+          - noctx
+          - nosprintfhostport
+          - perfsprint
       # Exclude all checks from swagger generated files
       - path: 'api/swagger/docs.go'
         linters:

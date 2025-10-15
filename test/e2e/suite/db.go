@@ -21,8 +21,8 @@ func openGorm(connStr string) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open gorm: %w", err)
 	}
-	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
-		return nil, fmt.Errorf("enable uuid extension: %w", err)
+	if execErr := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; execErr != nil {
+		return nil, fmt.Errorf("enable uuid extension: %w", execErr)
 	}
 	return db, nil
 }

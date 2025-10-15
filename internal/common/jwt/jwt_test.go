@@ -1,6 +1,7 @@
 package jwt_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -187,21 +188,21 @@ func TestVerifyToken(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tokenStr := tt.setupToken()
 
-			userID, err := jwt.VerifyToken(tokenStr, tt.secret, tt.expectedType)
+			verifiedUserID, verifyErr := jwt.VerifyToken(tokenStr, tt.secret, tt.expectedType)
 
 			if tt.expectedError != nil {
-				require.Error(t, err)
-				assert.Equal(t, "", userID)
+				require.Error(t, verifyErr)
+				assert.Empty(t, verifiedUserID)
 				// Check if the error is one of our custom JWT errors or a JWT library error
-				if tt.expectedError == jwt.ErrInvalidToken {
+				if errors.Is(tt.expectedError, jwt.ErrInvalidToken) {
 					// For ErrInvalidToken, accept either our custom error or JWT library errors
-					assert.True(t, err == jwt.ErrInvalidToken || err.Error() != "")
+					assert.True(t, errors.Is(verifyErr, jwt.ErrInvalidToken) || verifyErr.Error() != "")
 				} else {
-					assert.Contains(t, err.Error(), tt.expectedError.Error())
+					assert.Contains(t, verifyErr.Error(), tt.expectedError.Error())
 				}
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, userID, userID)
+				require.NoError(t, verifyErr)
+				assert.NotEmpty(t, verifiedUserID)
 			}
 		})
 	}
@@ -258,7 +259,7 @@ func TestVerifyToken_EdgeCases(t *testing.T) {
 
 		resultUserID, err := jwt.VerifyToken(tokenString, secret, "access")
 		require.Error(t, err)
-		assert.Equal(t, "", resultUserID)
+		assert.Empty(t, resultUserID)
 		assert.Equal(t, jwt.ErrInvalidTokenSub, err)
 	})
 
@@ -346,7 +347,7 @@ func TestVerifyToken_VeryLongUserID(t *testing.T) {
 	secret := "test-secret-key"
 	// Create a very long user ID
 	longUserID := ""
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		longUserID += "a"
 	}
 

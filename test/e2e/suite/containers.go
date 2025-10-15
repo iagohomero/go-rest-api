@@ -10,22 +10,23 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-type postgresInfo struct {
-	Container testcontainers.Container
-	Host      string
-	Port      int
-	ConnStr   string
-}
+const (
+	// PostgresStartupTimeout is the container startup timeouts.
+	PostgresStartupTimeout = 30 * time.Second
+	MailpitStartupTimeout  = 30 * time.Second
+	PostgresStartupDelay   = 2 * time.Second
+)
 
 func startPostgres(ctx context.Context) (testcontainers.Container, string, int, string, error) {
-	//nolint:staticcheck // allow deprecated RunContainer used in tests
-	pg, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("postgres:15-alpine"),
+	pg, err := postgres.Run(ctx,
+		"postgres:15-alpine",
 		postgres.WithDatabase("testdb"),
 		postgres.WithUsername("testuser"),
 		postgres.WithPassword("testpass"),
 		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").WithOccurrence(1).WithStartupTimeout(30*time.Second),
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(1).
+				WithStartupTimeout(PostgresStartupTimeout),
 		),
 	)
 	if err != nil {
@@ -48,7 +49,7 @@ func startPostgres(ctx context.Context) (testcontainers.Container, string, int, 
 		return nil, "", 0, "", fmt.Errorf("postgres conn string: %w", err)
 	}
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(PostgresStartupDelay)
 	return pg, host, port.Int(), connStr, nil
 }
 
@@ -57,11 +58,17 @@ func startMailpit(ctx context.Context) (testcontainers.Container, string, string
 		Image:        "axllent/mailpit:latest",
 		ExposedPorts: []string{"1025/tcp", "8025/tcp"},
 		WaitingFor: wait.ForAll(
-			wait.ForListeningPort("1025/tcp").WithStartupTimeout(30*time.Second),
-			wait.ForListeningPort("8025/tcp").WithStartupTimeout(30*time.Second),
+			wait.ForListeningPort("1025/tcp").WithStartupTimeout(MailpitStartupTimeout),
+			wait.ForListeningPort("8025/tcp").WithStartupTimeout(MailpitStartupTimeout),
 		),
 	}
-	mp, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{ContainerRequest: req, Started: true})
+	mp, err := testcontainers.GenericContainer(
+		ctx,
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		},
+	)
 	if err != nil {
 		return nil, "", "", 0, fmt.Errorf("start mailpit: %w", err)
 	}

@@ -55,7 +55,11 @@ func (m *MockAuthService) RefreshAuth(ctx context.Context, req *auth.RefreshToke
 	return args.Get(0).(*auth.Tokens), args.Error(1)
 }
 
-func (m *MockAuthService) ResetPassword(ctx context.Context, query *auth.ResetPasswordRequest, req *user.UpdateUserPasswordRequest) error {
+func (m *MockAuthService) ResetPassword(
+	ctx context.Context,
+	query *auth.ResetPasswordRequest,
+	req *user.UpdateUserPasswordRequest,
+) error {
 	args := m.Called(ctx, query, req)
 	return args.Error(0)
 }
@@ -101,7 +105,10 @@ func (m *MockAuthService) GenerateAuthTokens(ctx context.Context, user *user.Use
 	return args.Get(0).(*auth.Tokens), args.Error(1)
 }
 
-func (m *MockAuthService) GenerateResetPasswordToken(ctx context.Context, req *auth.ForgotPasswordRequest) (string, error) {
+func (m *MockAuthService) GenerateResetPasswordToken(
+	ctx context.Context,
+	req *auth.ForgotPasswordRequest,
+) (string, error) {
 	args := m.Called(ctx, req)
 	return args.String(0), args.Error(1)
 }
@@ -151,7 +158,11 @@ func (m *MockUserService) CreateUser(ctx context.Context, req *user.CreateUserRe
 	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockUserService) UpdatePassOrVerify(ctx context.Context, req *user.UpdateUserPasswordRequest, id string) error {
+func (m *MockUserService) UpdatePassOrVerify(
+	ctx context.Context,
+	req *user.UpdateUserPasswordRequest,
+	id string,
+) error {
 	args := m.Called(ctx, req, id)
 	return args.Error(0)
 }
@@ -817,7 +828,7 @@ func TestHandler_SendVerificationEmail(t *testing.T) {
 		},
 		{
 			name: "Error - No user in context",
-			setupUser: func(c *fiber.Ctx) {
+			setupUser: func(_ *fiber.Ctx) {
 				// No user set
 			},
 			setupMock: func(_ *MockAuthService, _ *MockEmailService) {

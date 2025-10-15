@@ -24,7 +24,7 @@ func TestHashPassword(t *testing.T) {
 			checkResult: func(t *testing.T, hash string) {
 				assert.NotEmpty(t, hash)
 				assert.NotEqual(t, "password123", hash)
-				assert.True(t, len(hash) > 50) // bcrypt hashes are typically 60 characters
+				assert.Greater(t, len(hash), 50) // bcrypt hashes are typically 60 characters
 			},
 		},
 		{
@@ -34,7 +34,7 @@ func TestHashPassword(t *testing.T) {
 			checkResult: func(t *testing.T, hash string) {
 				assert.NotEmpty(t, hash)
 				assert.NotEqual(t, "MySecurePassword123!@#", hash)
-				assert.True(t, len(hash) > 50)
+				assert.Greater(t, len(hash), 50)
 			},
 		},
 		{
@@ -43,8 +43,8 @@ func TestHashPassword(t *testing.T) {
 			expectError: false,
 			checkResult: func(t *testing.T, hash string) {
 				assert.NotEmpty(t, hash)
-				assert.NotEqual(t, "", hash)
-				assert.True(t, len(hash) > 50)
+				assert.NotEmpty(t, hash)
+				assert.Greater(t, len(hash), 50)
 			},
 		},
 		{
@@ -60,7 +60,7 @@ func TestHashPassword(t *testing.T) {
 			checkResult: func(t *testing.T, hash string) {
 				assert.NotEmpty(t, hash)
 				assert.NotEqual(t, "!@#$%^&*()_+-=[]{}|;':\",./<>?", hash)
-				assert.True(t, len(hash) > 50)
+				assert.Greater(t, len(hash), 50)
 			},
 		},
 		{
@@ -70,7 +70,7 @@ func TestHashPassword(t *testing.T) {
 			checkResult: func(t *testing.T, hash string) {
 				assert.NotEmpty(t, hash)
 				assert.NotEqual(t, "密码123🚀🎉", hash)
-				assert.True(t, len(hash) > 50)
+				assert.Greater(t, len(hash), 50)
 			},
 		},
 		{
@@ -80,7 +80,7 @@ func TestHashPassword(t *testing.T) {
 			checkResult: func(t *testing.T, hash string) {
 				assert.NotEmpty(t, hash)
 				assert.NotEqual(t, "password with spaces", hash)
-				assert.True(t, len(hash) > 50)
+				assert.Greater(t, len(hash), 50)
 			},
 		},
 		{
@@ -90,7 +90,7 @@ func TestHashPassword(t *testing.T) {
 			checkResult: func(t *testing.T, hash string) {
 				assert.NotEmpty(t, hash)
 				assert.NotEqual(t, "password\nwith\nnewlines", hash)
-				assert.True(t, len(hash) > 50)
+				assert.Greater(t, len(hash), 50)
 			},
 		},
 	}
@@ -135,7 +135,7 @@ func TestCheckPasswordHash(t *testing.T) {
 			name:     "Success - Wrong password",
 			password: "wrongpassword",
 			expected: false,
-			setupHash: func(password string) string {
+			setupHash: func(_ string) string {
 				hash, _ := crypto.HashPassword("correctpassword")
 				return hash
 			},
@@ -144,7 +144,7 @@ func TestCheckPasswordHash(t *testing.T) {
 			name:     "Success - Empty password with empty hash",
 			password: "",
 			expected: true,
-			setupHash: func(password string) string {
+			setupHash: func(_ string) string {
 				hash, _ := crypto.HashPassword("")
 				return hash
 			},
@@ -198,7 +198,7 @@ func TestCheckPasswordHash(t *testing.T) {
 			name:     "Error - Invalid hash format",
 			password: "password123",
 			expected: false,
-			setupHash: func(password string) string {
+			setupHash: func(_ string) string {
 				return "invalid-hash-format"
 			},
 		},
@@ -206,7 +206,7 @@ func TestCheckPasswordHash(t *testing.T) {
 			name:     "Error - Empty hash",
 			password: "password123",
 			expected: false,
-			setupHash: func(password string) string {
+			setupHash: func(_ string) string {
 				return ""
 			},
 		},
@@ -214,7 +214,7 @@ func TestCheckPasswordHash(t *testing.T) {
 			name:     "Error - Malformed hash",
 			password: "password123",
 			expected: false,
-			setupHash: func(password string) string {
+			setupHash: func(_ string) string {
 				return "$2a$10$invalid.hash.format"
 			},
 		},
@@ -329,10 +329,10 @@ func TestHashPassword_Security(t *testing.T) {
 	assert.NotContains(t, hash, password)
 
 	// Hash should be significantly longer than the original password
-	assert.True(t, len(hash) > len(password)*2)
+	assert.Greater(t, len(hash), len(password)*2)
 
 	// Hash should start with bcrypt identifier
-	assert.True(t, len(hash) >= 60) // bcrypt hashes are 60 characters
+	assert.GreaterOrEqual(t, len(hash), 60) // bcrypt hashes are 60 characters
 }
 
 // TestCheckPasswordHash_CaseSensitivity tests that password checking is case sensitive.
@@ -350,10 +350,10 @@ func TestCheckPasswordHash_CaseSensitivity(t *testing.T) {
 	assert.False(t, crypto.CheckPasswordHash("pASSWORD123", hash))
 }
 
-// Helper function to repeat a string
+// Helper function to repeat a string.
 func repeatString(s string, count int) string {
 	result := ""
-	for i := 0; i < count; i++ {
+	for range count {
 		result += s
 	}
 	return result

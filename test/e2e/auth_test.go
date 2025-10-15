@@ -1,4 +1,3 @@
-//nolint:testpackage // E2E tests need access to internal packages
 package e2e
 
 import (
@@ -256,8 +255,8 @@ func TestLogoutFlow(t *testing.T) {
 	}
 
 	var loginResult map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&loginResult); err != nil {
-		t.Fatalf("Failed to decode login response: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&loginResult); decodeErr != nil {
+		t.Fatalf("Failed to decode login response: %v", decodeErr)
 	}
 	resp.Body.Close()
 
@@ -301,7 +300,7 @@ func TestGoogleLoginRedirect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to build request: %v", err)
 	}
-	client := &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	client := &http.Client{CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	}, Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
@@ -319,7 +318,7 @@ func TestGoogleLoginRedirect(t *testing.T) {
 	if loc == "" {
 		t.Fatal("Missing Location header")
 	}
-	if !(containsFold(loc, "https://accounts.google.com") || containsFold(loc, "google")) {
+	if !containsFold(loc, "https://accounts.google.com") && !containsFold(loc, "google") {
 		t.Errorf("Expected Location to be Google OAuth URL, got %s", loc)
 	}
 
@@ -370,8 +369,8 @@ func TestForgotPasswordSendsEmail(t *testing.T) {
 	if id == "" {
 		t.Fatalf("Mailpit message ID missing")
 	}
-	if _, err := extractTokenFromMessage(id); err != nil {
-		t.Fatalf("Expected token in email body: %v", err)
+	if _, extractErr := extractTokenFromMessage(id); extractErr != nil {
+		t.Fatalf("Expected token in email body: %v", extractErr)
 	}
 }
 
@@ -454,8 +453,8 @@ func TestSendVerificationEmail(t *testing.T) {
 		t.Fatalf("Failed to login: %v", err)
 	}
 	var loginResult map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&loginResult); err != nil {
-		t.Fatalf("Failed to decode login: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&loginResult); decodeErr != nil {
+		t.Fatalf("Failed to decode login: %v", decodeErr)
 	}
 	resp.Body.Close()
 	tokens, _ := loginResult["tokens"].(map[string]any)
@@ -481,8 +480,8 @@ func TestSendVerificationEmail(t *testing.T) {
 	if id == "" {
 		t.Fatalf("Missing Mailpit message ID")
 	}
-	if _, err := extractTokenFromMessage(id); err != nil {
-		t.Fatalf("Expected token in verification email: %v", err)
+	if _, extractErr := extractTokenFromMessage(id); extractErr != nil {
+		t.Fatalf("Expected token in verification email: %v", extractErr)
 	}
 }
 
@@ -508,8 +507,8 @@ func TestVerifyEmailFlow(t *testing.T) {
 		t.Fatalf("Failed to login: %v", err)
 	}
 	var loginResult map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&loginResult); err != nil {
-		t.Fatalf("Failed to decode login: %v", err)
+	if decodeErr := json.NewDecoder(resp.Body).Decode(&loginResult); decodeErr != nil {
+		t.Fatalf("Failed to decode login: %v", decodeErr)
 	}
 	resp.Body.Close()
 	tokens, _ := loginResult["tokens"].(map[string]any)
