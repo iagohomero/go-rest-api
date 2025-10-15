@@ -30,6 +30,11 @@ func NewService(db *gorm.DB) Service {
 
 // DatabaseCheck verifies database connectivity.
 func (s *service) DatabaseCheck() error {
+	if s.db == nil {
+		s.log.Errorf("Database connection is nil")
+		return errors.New("database connection is nil")
+	}
+
 	sqlDB, err := s.db.DB()
 	if err != nil {
 		s.log.Errorf("Failed to access database connection pool: %v", err)

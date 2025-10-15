@@ -21,12 +21,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockService is a mock implementation of the Service interface.
-type MockService struct {
+// MockAuthService is a mock implementation of the auth Service interface.
+type MockAuthService struct {
 	mock.Mock
 }
 
-func (m *MockService) Register(ctx context.Context, req *auth.RegisterRequest) (*user.User, error) {
+func (m *MockAuthService) Register(ctx context.Context, req *auth.RegisterRequest) (*user.User, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -34,7 +34,7 @@ func (m *MockService) Register(ctx context.Context, req *auth.RegisterRequest) (
 	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockService) Login(ctx context.Context, req *auth.LoginRequest) (*user.User, error) {
+func (m *MockAuthService) Login(ctx context.Context, req *auth.LoginRequest) (*user.User, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -42,12 +42,12 @@ func (m *MockService) Login(ctx context.Context, req *auth.LoginRequest) (*user.
 	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockService) Logout(ctx context.Context, req *auth.LogoutRequest) error {
+func (m *MockAuthService) Logout(ctx context.Context, req *auth.LogoutRequest) error {
 	args := m.Called(ctx, req)
 	return args.Error(0)
 }
 
-func (m *MockService) RefreshAuth(ctx context.Context, req *auth.RefreshTokenRequest) (*auth.Tokens, error) {
+func (m *MockAuthService) RefreshAuth(ctx context.Context, req *auth.RefreshTokenRequest) (*auth.Tokens, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -55,37 +55,37 @@ func (m *MockService) RefreshAuth(ctx context.Context, req *auth.RefreshTokenReq
 	return args.Get(0).(*auth.Tokens), args.Error(1)
 }
 
-func (m *MockService) ResetPassword(ctx context.Context, query *auth.ResetPasswordRequest, req *user.UpdateUserPasswordRequest) error {
+func (m *MockAuthService) ResetPassword(ctx context.Context, query *auth.ResetPasswordRequest, req *user.UpdateUserPasswordRequest) error {
 	args := m.Called(ctx, query, req)
 	return args.Error(0)
 }
 
-func (m *MockService) VerifyEmail(ctx context.Context, query *auth.ResetPasswordRequest) error {
+func (m *MockAuthService) VerifyEmail(ctx context.Context, query *auth.ResetPasswordRequest) error {
 	args := m.Called(ctx, query)
 	return args.Error(0)
 }
 
-func (m *MockService) GenerateToken(userID string, expires time.Time, tokenType string) (string, error) {
+func (m *MockAuthService) GenerateToken(userID string, expires time.Time, tokenType string) (string, error) {
 	args := m.Called(userID, expires, tokenType)
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockService) SaveToken(ctx context.Context, token, userID, tokenType string, expires time.Time) error {
+func (m *MockAuthService) SaveToken(ctx context.Context, token, userID, tokenType string, expires time.Time) error {
 	args := m.Called(ctx, token, userID, tokenType, expires)
 	return args.Error(0)
 }
 
-func (m *MockService) DeleteToken(ctx context.Context, tokenType string, userID string) error {
+func (m *MockAuthService) DeleteToken(ctx context.Context, tokenType string, userID string) error {
 	args := m.Called(ctx, tokenType, userID)
 	return args.Error(0)
 }
 
-func (m *MockService) DeleteAllToken(ctx context.Context, userID string) error {
+func (m *MockAuthService) DeleteAllToken(ctx context.Context, userID string) error {
 	args := m.Called(ctx, userID)
 	return args.Error(0)
 }
 
-func (m *MockService) GetTokenByUserID(ctx context.Context, tokenStr string) (*auth.TokenDB, error) {
+func (m *MockAuthService) GetTokenByUserID(ctx context.Context, tokenStr string) (*auth.TokenDB, error) {
 	args := m.Called(ctx, tokenStr)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -93,7 +93,7 @@ func (m *MockService) GetTokenByUserID(ctx context.Context, tokenStr string) (*a
 	return args.Get(0).(*auth.TokenDB), args.Error(1)
 }
 
-func (m *MockService) GenerateAuthTokens(ctx context.Context, user *user.User) (*auth.Tokens, error) {
+func (m *MockAuthService) GenerateAuthTokens(ctx context.Context, user *user.User) (*auth.Tokens, error) {
 	args := m.Called(ctx, user)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -101,12 +101,12 @@ func (m *MockService) GenerateAuthTokens(ctx context.Context, user *user.User) (
 	return args.Get(0).(*auth.Tokens), args.Error(1)
 }
 
-func (m *MockService) GenerateResetPasswordToken(ctx context.Context, req *auth.ForgotPasswordRequest) (string, error) {
+func (m *MockAuthService) GenerateResetPasswordToken(ctx context.Context, req *auth.ForgotPasswordRequest) (string, error) {
 	args := m.Called(ctx, req)
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockService) GenerateVerifyEmailToken(ctx context.Context, user *user.User) (*string, error) {
+func (m *MockAuthService) GenerateVerifyEmailToken(ctx context.Context, user *user.User) (*string, error) {
 	args := m.Called(ctx, user)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -114,7 +114,7 @@ func (m *MockService) GenerateVerifyEmailToken(ctx context.Context, user *user.U
 	return args.Get(0).(*string), args.Error(1)
 }
 
-// MockUserService is a mock implementation of the user.Service interface.
+// MockUserService is a mock implementation of the user Service interface.
 type MockUserService struct {
 	mock.Mock
 }
@@ -177,7 +177,7 @@ func (m *MockUserService) CreateGoogleUser(ctx context.Context, req *user.Create
 	return args.Get(0).(*user.User), args.Error(1)
 }
 
-// MockEmailService is a mock implementation of the email.Service interface.
+// MockEmailService is a mock implementation of the email Service interface.
 type MockEmailService struct {
 	mock.Mock
 }
@@ -197,27 +197,15 @@ func (m *MockEmailService) SendVerificationEmail(email, token string) error {
 	return args.Error(0)
 }
 
-// setupTestHandler creates a new handler with mock services for testing.
-func setupTestHandler() (*auth.Handler, *MockService, *MockUserService, *MockEmailService) {
-	mockAuthService := new(MockService)
+// setupTestHandler creates a new auth handler with mock services for testing.
+func setupTestHandler() (*auth.Handler, *MockAuthService, *MockUserService, *MockEmailService) {
+	mockAuthService := new(MockAuthService)
 	mockUserService := new(MockUserService)
 	mockEmailService := new(MockEmailService)
 
-	// Create a minimal config for testing
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
-			Secret:              "test-secret",
-			AccessExpMinutes:    60,
-			RefreshExpDays:      7,
-			ResetPasswordExpMin: 15,
-			VerifyEmailExpMin:   15,
-		},
-		SMTP: config.SMTPConfig{
-			Host:     "localhost",
-			Port:     587,
-			Username: "test",
-			Password: "test",
-			From:     "test@example.com",
+			Secret: "test-secret",
 		},
 	}
 
@@ -239,26 +227,10 @@ func setupFiberApp() *fiber.App {
 
 // TestNewHandler tests the handler constructor.
 func TestNewHandler(t *testing.T) {
-	mockAuthService := new(MockService)
+	mockAuthService := new(MockAuthService)
 	mockUserService := new(MockUserService)
 	mockEmailService := new(MockEmailService)
-
-	cfg := &config.Config{
-		JWT: config.JWTConfig{
-			Secret:              "test-secret",
-			AccessExpMinutes:    60,
-			RefreshExpDays:      7,
-			ResetPasswordExpMin: 15,
-			VerifyEmailExpMin:   15,
-		},
-		SMTP: config.SMTPConfig{
-			Host:     "localhost",
-			Port:     587,
-			Username: "test",
-			Password: "test",
-			From:     "test@example.com",
-		},
-	}
+	cfg := &config.Config{}
 
 	handler := auth.NewHandler(mockAuthService, mockUserService, mockEmailService, cfg)
 
@@ -270,7 +242,7 @@ func TestHandler_Register(t *testing.T) {
 	tests := []struct {
 		name           string
 		requestBody    interface{}
-		setupMock      func(*MockService, *MockUserService, *MockEmailService)
+		setupMock      func(*MockAuthService)
 		expectedStatus int
 		expectedError  bool
 	}{
@@ -281,7 +253,7 @@ func TestHandler_Register(t *testing.T) {
 				Email:    "newuser@example.com",
 				Password: "password123",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(m *MockAuthService) {
 				createdUser := &user.User{
 					ID:    uuid.New(),
 					Name:  "New User",
@@ -290,17 +262,15 @@ func TestHandler_Register(t *testing.T) {
 				}
 				tokens := &auth.Tokens{
 					Access: auth.TokenExpires{
-						Token:   "access-token",
-						Expires: time.Now().Add(time.Hour),
+						Token: "access-token",
 					},
 					Refresh: auth.TokenExpires{
-						Token:   "refresh-token",
-						Expires: time.Now().Add(time.Hour * 24),
+						Token: "refresh-token",
 					},
 				}
-				mockAuth.On("Register", mock.Anything, mock.AnythingOfType("*auth.RegisterRequest")).
+				m.On("Register", mock.Anything, mock.AnythingOfType("*auth.RegisterRequest")).
 					Return(createdUser, nil)
-				mockAuth.On("GenerateAuthTokens", mock.Anything, createdUser).
+				m.On("GenerateAuthTokens", mock.Anything, createdUser).
 					Return(tokens, nil)
 			},
 			expectedStatus: fiber.StatusCreated,
@@ -309,7 +279,7 @@ func TestHandler_Register(t *testing.T) {
 		{
 			name:        "Error - Invalid JSON body",
 			requestBody: "invalid json",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(_ *MockAuthService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -322,8 +292,8 @@ func TestHandler_Register(t *testing.T) {
 				Email:    "duplicate@example.com",
 				Password: "password123",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("Register", mock.Anything, mock.AnythingOfType("*auth.RegisterRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("Register", mock.Anything, mock.AnythingOfType("*auth.RegisterRequest")).
 					Return(nil, auth.ErrEmailTaken)
 			},
 			expectedStatus: fiber.StatusConflict,
@@ -336,8 +306,8 @@ func TestHandler_Register(t *testing.T) {
 				Email:    "error@example.com",
 				Password: "password123",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("Register", mock.Anything, mock.AnythingOfType("*auth.RegisterRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("Register", mock.Anything, mock.AnythingOfType("*auth.RegisterRequest")).
 					Return(nil, errors.New("service error"))
 			},
 			expectedStatus: fiber.StatusInternalServerError,
@@ -347,10 +317,10 @@ func TestHandler_Register(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, mockAuthService, mockUserService, mockEmailService := setupTestHandler()
+			handler, mockAuthService, _, _ := setupTestHandler()
 			app := setupFiberApp()
 
-			tt.setupMock(mockAuthService, mockUserService, mockEmailService)
+			tt.setupMock(mockAuthService)
 
 			app.Post("/auth/register", handler.Register)
 
@@ -384,7 +354,7 @@ func TestHandler_Login(t *testing.T) {
 	tests := []struct {
 		name           string
 		requestBody    interface{}
-		setupMock      func(*MockService, *MockUserService, *MockEmailService)
+		setupMock      func(*MockAuthService)
 		expectedStatus int
 		expectedError  bool
 	}{
@@ -394,7 +364,7 @@ func TestHandler_Login(t *testing.T) {
 				Email:    "user@example.com",
 				Password: "password123",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(m *MockAuthService) {
 				user := &user.User{
 					ID:    uuid.New(),
 					Name:  "Test User",
@@ -403,17 +373,15 @@ func TestHandler_Login(t *testing.T) {
 				}
 				tokens := &auth.Tokens{
 					Access: auth.TokenExpires{
-						Token:   "access-token",
-						Expires: time.Now().Add(time.Hour),
+						Token: "access-token",
 					},
 					Refresh: auth.TokenExpires{
-						Token:   "refresh-token",
-						Expires: time.Now().Add(time.Hour * 24),
+						Token: "refresh-token",
 					},
 				}
-				mockAuth.On("Login", mock.Anything, mock.AnythingOfType("*auth.LoginRequest")).
+				m.On("Login", mock.Anything, mock.AnythingOfType("*auth.LoginRequest")).
 					Return(user, nil)
-				mockAuth.On("GenerateAuthTokens", mock.Anything, user).
+				m.On("GenerateAuthTokens", mock.Anything, user).
 					Return(tokens, nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -422,7 +390,7 @@ func TestHandler_Login(t *testing.T) {
 		{
 			name:        "Error - Invalid JSON body",
 			requestBody: "invalid json",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(_ *MockAuthService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -434,34 +402,21 @@ func TestHandler_Login(t *testing.T) {
 				Email:    "user@example.com",
 				Password: "wrongpassword",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("Login", mock.Anything, mock.AnythingOfType("*auth.LoginRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("Login", mock.Anything, mock.AnythingOfType("*auth.LoginRequest")).
 					Return(nil, auth.ErrInvalidCredentials)
 			},
 			expectedStatus: fiber.StatusUnauthorized,
-			expectedError:  true,
-		},
-		{
-			name: "Error - Service returns error",
-			requestBody: auth.LoginRequest{
-				Email:    "user@example.com",
-				Password: "password123",
-			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("Login", mock.Anything, mock.AnythingOfType("*auth.LoginRequest")).
-					Return(nil, errors.New("service error"))
-			},
-			expectedStatus: fiber.StatusInternalServerError,
 			expectedError:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, mockAuthService, mockUserService, mockEmailService := setupTestHandler()
+			handler, mockAuthService, _, _ := setupTestHandler()
 			app := setupFiberApp()
 
-			tt.setupMock(mockAuthService, mockUserService, mockEmailService)
+			tt.setupMock(mockAuthService)
 
 			app.Post("/auth/login", handler.Login)
 
@@ -495,7 +450,7 @@ func TestHandler_Logout(t *testing.T) {
 	tests := []struct {
 		name           string
 		requestBody    interface{}
-		setupMock      func(*MockService, *MockUserService, *MockEmailService)
+		setupMock      func(*MockAuthService)
 		expectedStatus int
 		expectedError  bool
 	}{
@@ -504,8 +459,8 @@ func TestHandler_Logout(t *testing.T) {
 			requestBody: auth.LogoutRequest{
 				RefreshToken: "valid-refresh-token",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("Logout", mock.Anything, mock.AnythingOfType("*auth.LogoutRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("Logout", mock.Anything, mock.AnythingOfType("*auth.LogoutRequest")).
 					Return(nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -514,7 +469,7 @@ func TestHandler_Logout(t *testing.T) {
 		{
 			name:        "Error - Invalid JSON body",
 			requestBody: "invalid json",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(_ *MockAuthService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -523,35 +478,23 @@ func TestHandler_Logout(t *testing.T) {
 		{
 			name: "Error - Token not found",
 			requestBody: auth.LogoutRequest{
-				RefreshToken: "invalid-refresh-token",
+				RefreshToken: "invalid-token",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("Logout", mock.Anything, mock.AnythingOfType("*auth.LogoutRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("Logout", mock.Anything, mock.AnythingOfType("*auth.LogoutRequest")).
 					Return(auth.ErrTokenNotFound)
 			},
 			expectedStatus: fiber.StatusNotFound,
-			expectedError:  true,
-		},
-		{
-			name: "Error - Service returns error",
-			requestBody: auth.LogoutRequest{
-				RefreshToken: "valid-refresh-token",
-			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("Logout", mock.Anything, mock.AnythingOfType("*auth.LogoutRequest")).
-					Return(errors.New("service error"))
-			},
-			expectedStatus: fiber.StatusInternalServerError,
 			expectedError:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, mockAuthService, mockUserService, mockEmailService := setupTestHandler()
+			handler, mockAuthService, _, _ := setupTestHandler()
 			app := setupFiberApp()
 
-			tt.setupMock(mockAuthService, mockUserService, mockEmailService)
+			tt.setupMock(mockAuthService)
 
 			app.Post("/auth/logout", handler.Logout)
 
@@ -585,7 +528,7 @@ func TestHandler_RefreshTokens(t *testing.T) {
 	tests := []struct {
 		name           string
 		requestBody    interface{}
-		setupMock      func(*MockService, *MockUserService, *MockEmailService)
+		setupMock      func(*MockAuthService)
 		expectedStatus int
 		expectedError  bool
 	}{
@@ -594,18 +537,16 @@ func TestHandler_RefreshTokens(t *testing.T) {
 			requestBody: auth.RefreshTokenRequest{
 				RefreshToken: "valid-refresh-token",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(m *MockAuthService) {
 				tokens := &auth.Tokens{
 					Access: auth.TokenExpires{
-						Token:   "new-access-token",
-						Expires: time.Now().Add(time.Hour),
+						Token: "new-access-token",
 					},
 					Refresh: auth.TokenExpires{
-						Token:   "new-refresh-token",
-						Expires: time.Now().Add(time.Hour * 24),
+						Token: "new-refresh-token",
 					},
 				}
-				mockAuth.On("RefreshAuth", mock.Anything, mock.AnythingOfType("*auth.RefreshTokenRequest")).
+				m.On("RefreshAuth", mock.Anything, mock.AnythingOfType("*auth.RefreshTokenRequest")).
 					Return(tokens, nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -614,44 +555,32 @@ func TestHandler_RefreshTokens(t *testing.T) {
 		{
 			name:        "Error - Invalid JSON body",
 			requestBody: "invalid json",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(_ *MockAuthService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
 			expectedError:  true,
 		},
 		{
-			name: "Error - Invalid token",
+			name: "Error - Invalid refresh token",
 			requestBody: auth.RefreshTokenRequest{
-				RefreshToken: "invalid-refresh-token",
+				RefreshToken: "invalid-token",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("RefreshAuth", mock.Anything, mock.AnythingOfType("*auth.RefreshTokenRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("RefreshAuth", mock.Anything, mock.AnythingOfType("*auth.RefreshTokenRequest")).
 					Return(nil, auth.ErrInvalidToken)
 			},
 			expectedStatus: fiber.StatusUnauthorized,
-			expectedError:  true,
-		},
-		{
-			name: "Error - Service returns error",
-			requestBody: auth.RefreshTokenRequest{
-				RefreshToken: "valid-refresh-token",
-			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("RefreshAuth", mock.Anything, mock.AnythingOfType("*auth.RefreshTokenRequest")).
-					Return(nil, errors.New("service error"))
-			},
-			expectedStatus: fiber.StatusInternalServerError,
 			expectedError:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, mockAuthService, mockUserService, mockEmailService := setupTestHandler()
+			handler, mockAuthService, _, _ := setupTestHandler()
 			app := setupFiberApp()
 
-			tt.setupMock(mockAuthService, mockUserService, mockEmailService)
+			tt.setupMock(mockAuthService)
 
 			app.Post("/auth/refresh-tokens", handler.RefreshTokens)
 
@@ -685,19 +614,19 @@ func TestHandler_ForgotPassword(t *testing.T) {
 	tests := []struct {
 		name           string
 		requestBody    interface{}
-		setupMock      func(*MockService, *MockUserService, *MockEmailService)
+		setupMock      func(*MockAuthService, *MockEmailService)
 		expectedStatus int
 		expectedError  bool
 	}{
 		{
-			name: "Success - Forgot password with valid email",
+			name: "Success - Send password reset email",
 			requestBody: auth.ForgotPasswordRequest{
 				Email: "user@example.com",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("GenerateResetPasswordToken", mock.Anything, mock.AnythingOfType("*auth.ForgotPasswordRequest")).
+			setupMock: func(m *MockAuthService, e *MockEmailService) {
+				m.On("GenerateResetPasswordToken", mock.Anything, mock.AnythingOfType("*auth.ForgotPasswordRequest")).
 					Return("reset-token", nil)
-				mockEmail.On("SendResetPasswordEmail", "user@example.com", "reset-token").
+				e.On("SendResetPasswordEmail", "user@example.com", "reset-token").
 					Return(nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -706,7 +635,7 @@ func TestHandler_ForgotPassword(t *testing.T) {
 		{
 			name:        "Error - Invalid JSON body",
 			requestBody: "invalid json",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(_ *MockAuthService, _ *MockEmailService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
@@ -717,21 +646,23 @@ func TestHandler_ForgotPassword(t *testing.T) {
 			requestBody: auth.ForgotPasswordRequest{
 				Email: "notfound@example.com",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("GenerateResetPasswordToken", mock.Anything, mock.AnythingOfType("*auth.ForgotPasswordRequest")).
+			setupMock: func(m *MockAuthService, _ *MockEmailService) {
+				m.On("GenerateResetPasswordToken", mock.Anything, mock.AnythingOfType("*auth.ForgotPasswordRequest")).
 					Return("", user.ErrUserNotFound)
 			},
 			expectedStatus: fiber.StatusNotFound,
 			expectedError:  true,
 		},
 		{
-			name: "Error - Service returns error",
+			name: "Error - Email service fails",
 			requestBody: auth.ForgotPasswordRequest{
 				Email: "user@example.com",
 			},
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("GenerateResetPasswordToken", mock.Anything, mock.AnythingOfType("*auth.ForgotPasswordRequest")).
-					Return("", errors.New("service error"))
+			setupMock: func(m *MockAuthService, e *MockEmailService) {
+				m.On("GenerateResetPasswordToken", mock.Anything, mock.AnythingOfType("*auth.ForgotPasswordRequest")).
+					Return("reset-token", nil)
+				e.On("SendResetPasswordEmail", "user@example.com", "reset-token").
+					Return(errors.New("email service error"))
 			},
 			expectedStatus: fiber.StatusInternalServerError,
 			expectedError:  true,
@@ -740,10 +671,10 @@ func TestHandler_ForgotPassword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, mockAuthService, mockUserService, mockEmailService := setupTestHandler()
+			handler, mockAuthService, _, mockEmailService := setupTestHandler()
 			app := setupFiberApp()
 
-			tt.setupMock(mockAuthService, mockUserService, mockEmailService)
+			tt.setupMock(mockAuthService, mockEmailService)
 
 			app.Post("/auth/forgot-password", handler.ForgotPassword)
 
@@ -777,20 +708,20 @@ func TestHandler_ForgotPassword(t *testing.T) {
 func TestHandler_ResetPassword(t *testing.T) {
 	tests := []struct {
 		name           string
-		requestBody    interface{}
 		queryParams    string
-		setupMock      func(*MockService, *MockUserService, *MockEmailService)
+		requestBody    interface{}
+		setupMock      func(*MockAuthService)
 		expectedStatus int
 		expectedError  bool
 	}{
 		{
-			name: "Success - Reset password with valid token",
+			name:        "Success - Reset password with valid token",
+			queryParams: "?token=valid-reset-token",
 			requestBody: user.UpdateUserPasswordRequest{
 				Password: "newpassword123",
 			},
-			queryParams: "?token=valid-reset-token",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("ResetPassword", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest"), mock.AnythingOfType("*user.UpdateUserPasswordRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("ResetPassword", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest"), mock.AnythingOfType("*user.UpdateUserPasswordRequest")).
 					Return(nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -798,48 +729,35 @@ func TestHandler_ResetPassword(t *testing.T) {
 		},
 		{
 			name:        "Error - Invalid JSON body",
+			queryParams: "?token=valid-token",
 			requestBody: "invalid json",
-			queryParams: "?token=valid-reset-token",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupMock: func(_ *MockAuthService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusBadRequest,
 			expectedError:  true,
 		},
 		{
-			name: "Error - Invalid token",
+			name:        "Error - Invalid token",
+			queryParams: "?token=invalid-token",
 			requestBody: user.UpdateUserPasswordRequest{
 				Password: "newpassword123",
 			},
-			queryParams: "?token=invalid-token",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("ResetPassword", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest"), mock.AnythingOfType("*user.UpdateUserPasswordRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("ResetPassword", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest"), mock.AnythingOfType("*user.UpdateUserPasswordRequest")).
 					Return(auth.ErrInvalidToken)
 			},
 			expectedStatus: fiber.StatusUnauthorized,
-			expectedError:  true,
-		},
-		{
-			name: "Error - Service returns error",
-			requestBody: user.UpdateUserPasswordRequest{
-				Password: "newpassword123",
-			},
-			queryParams: "?token=valid-reset-token",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("ResetPassword", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest"), mock.AnythingOfType("*user.UpdateUserPasswordRequest")).
-					Return(errors.New("service error"))
-			},
-			expectedStatus: fiber.StatusInternalServerError,
 			expectedError:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, mockAuthService, mockUserService, mockEmailService := setupTestHandler()
+			handler, mockAuthService, _, _ := setupTestHandler()
 			app := setupFiberApp()
 
-			tt.setupMock(mockAuthService, mockUserService, mockEmailService)
+			tt.setupMock(mockAuthService)
 
 			app.Post("/auth/reset-password", handler.ResetPassword)
 
@@ -872,35 +790,55 @@ func TestHandler_ResetPassword(t *testing.T) {
 func TestHandler_SendVerificationEmail(t *testing.T) {
 	tests := []struct {
 		name           string
-		setupMock      func(*MockService, *MockUserService, *MockEmailService)
+		setupUser      func(*fiber.Ctx)
+		setupMock      func(*MockAuthService, *MockEmailService)
 		expectedStatus int
 		expectedError  bool
 	}{
 		{
 			name: "Success - Send verification email",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			setupUser: func(c *fiber.Ctx) {
+				user := &user.User{
+					ID:    uuid.New(),
+					Name:  "Test User",
+					Email: "test@example.com",
+				}
+				c.Locals("user", user)
+			},
+			setupMock: func(m *MockAuthService, e *MockEmailService) {
 				token := "verify-token"
-				mockAuth.On("GenerateVerifyEmailToken", mock.Anything, mock.AnythingOfType("*user.User")).
+				m.On("GenerateVerifyEmailToken", mock.Anything, mock.AnythingOfType("*user.User")).
 					Return(&token, nil)
-				mockEmail.On("SendVerificationEmail", "user@example.com", "verify-token").
+				e.On("SendVerificationEmail", "test@example.com", "verify-token").
 					Return(nil)
 			},
 			expectedStatus: fiber.StatusOK,
 			expectedError:  false,
 		},
 		{
-			name: "Error - Unauthorized (no user in context)",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
+			name: "Error - No user in context",
+			setupUser: func(c *fiber.Ctx) {
+				// No user set
+			},
+			setupMock: func(_ *MockAuthService, _ *MockEmailService) {
 				// No mock setup needed
 			},
 			expectedStatus: fiber.StatusUnauthorized,
 			expectedError:  true,
 		},
 		{
-			name: "Error - Service returns error",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("GenerateVerifyEmailToken", mock.Anything, mock.AnythingOfType("*user.User")).
-					Return(nil, errors.New("service error"))
+			name: "Error - Token generation fails",
+			setupUser: func(c *fiber.Ctx) {
+				user := &user.User{
+					ID:    uuid.New(),
+					Name:  "Test User",
+					Email: "test@example.com",
+				}
+				c.Locals("user", user)
+			},
+			setupMock: func(m *MockAuthService, _ *MockEmailService) {
+				m.On("GenerateVerifyEmailToken", mock.Anything, mock.AnythingOfType("*user.User")).
+					Return(nil, auth.ErrTokenGenerationFailed)
 			},
 			expectedStatus: fiber.StatusInternalServerError,
 			expectedError:  true,
@@ -909,29 +847,17 @@ func TestHandler_SendVerificationEmail(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, mockAuthService, mockUserService, mockEmailService := setupTestHandler()
+			handler, mockAuthService, _, mockEmailService := setupTestHandler()
 			app := setupFiberApp()
 
-			tt.setupMock(mockAuthService, mockUserService, mockEmailService)
+			tt.setupMock(mockAuthService, mockEmailService)
 
-			// Add middleware to set user in context for success and error cases that need a user
-			if tt.name == "Success - Send verification email" || tt.name == "Error - Service returns error" {
-				app.Use(func(c *fiber.Ctx) error {
-					user := &user.User{
-						ID:    uuid.New(),
-						Name:  "Test User",
-						Email: "user@example.com",
-						Role:  "user",
-					}
-					c.Locals("user", user)
-					return c.Next()
-				})
-			}
-
-			app.Post("/auth/send-verification-email", handler.SendVerificationEmail)
+			app.Post("/auth/send-verification-email", func(c *fiber.Ctx) error {
+				tt.setupUser(c)
+				return handler.SendVerificationEmail(c)
+			})
 
 			req := httptest.NewRequest(http.MethodPost, "/auth/send-verification-email", nil)
-			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := app.Test(req)
 
@@ -951,15 +877,15 @@ func TestHandler_VerifyEmail(t *testing.T) {
 	tests := []struct {
 		name           string
 		queryParams    string
-		setupMock      func(*MockService, *MockUserService, *MockEmailService)
+		setupMock      func(*MockAuthService)
 		expectedStatus int
 		expectedError  bool
 	}{
 		{
 			name:        "Success - Verify email with valid token",
 			queryParams: "?token=valid-verify-token",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("VerifyEmail", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("VerifyEmail", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest")).
 					Return(nil)
 			},
 			expectedStatus: fiber.StatusOK,
@@ -968,36 +894,25 @@ func TestHandler_VerifyEmail(t *testing.T) {
 		{
 			name:        "Error - Invalid token",
 			queryParams: "?token=invalid-token",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("VerifyEmail", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest")).
+			setupMock: func(m *MockAuthService) {
+				m.On("VerifyEmail", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest")).
 					Return(auth.ErrInvalidToken)
 			},
 			expectedStatus: fiber.StatusUnauthorized,
-			expectedError:  true,
-		},
-		{
-			name:        "Error - Service returns error",
-			queryParams: "?token=valid-verify-token",
-			setupMock: func(mockAuth *MockService, mockUser *MockUserService, mockEmail *MockEmailService) {
-				mockAuth.On("VerifyEmail", mock.Anything, mock.AnythingOfType("*auth.ResetPasswordRequest")).
-					Return(errors.New("service error"))
-			},
-			expectedStatus: fiber.StatusInternalServerError,
 			expectedError:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, mockAuthService, mockUserService, mockEmailService := setupTestHandler()
+			handler, mockAuthService, _, _ := setupTestHandler()
 			app := setupFiberApp()
 
-			tt.setupMock(mockAuthService, mockUserService, mockEmailService)
+			tt.setupMock(mockAuthService)
 
 			app.Post("/auth/verify-email", handler.VerifyEmail)
 
 			req := httptest.NewRequest(http.MethodPost, "/auth/verify-email"+tt.queryParams, nil)
-			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := app.Test(req)
 

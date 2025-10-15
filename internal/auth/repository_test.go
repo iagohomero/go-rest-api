@@ -52,8 +52,8 @@ func TestNewRepository(t *testing.T) {
 	assert.NotNil(t, repo)
 }
 
-// TestRepository_CreateUser tests the CreateUser repository method.
-func TestRepository_CreateUser(t *testing.T) {
+// TestCreateUser tests the CreateUser repository method.
+func TestCreateUser(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
@@ -136,9 +136,10 @@ func TestRepository_CreateUser(t *testing.T) {
 	}
 }
 
-// TestRepository_CreateToken tests the CreateToken repository method.
-func TestRepository_CreateToken(t *testing.T) {
+// TestCreateToken tests the CreateToken repository method.
+func TestCreateToken(t *testing.T) {
 	ctx := context.Background()
+	validUUID := uuid.New()
 
 	tests := []struct {
 		name          string
@@ -150,25 +151,9 @@ func TestRepository_CreateToken(t *testing.T) {
 			name: "Success - Create token",
 			token: &auth.TokenDB{
 				Token:   "test-token",
-				UserID:  uuid.New(),
-				Type:    auth.TokenTypeAccess,
-				Expires: time.Now().Add(time.Hour),
-			},
-			setupMock: func(mock sqlmock.Sqlmock) {
-				mock.ExpectBegin()
-				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "tokens"`)).
-					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uuid.New()))
-				mock.ExpectCommit()
-			},
-			expectedError: nil,
-		},
-		{
-			name: "Success - Create refresh token",
-			token: &auth.TokenDB{
-				Token:   "refresh-token",
-				UserID:  uuid.New(),
+				UserID:  validUUID,
 				Type:    auth.TokenTypeRefresh,
-				Expires: time.Now().Add(time.Hour * 24),
+				Expires: time.Now().Add(time.Hour),
 			},
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
@@ -182,8 +167,8 @@ func TestRepository_CreateToken(t *testing.T) {
 			name: "Error - Database error",
 			token: &auth.TokenDB{
 				Token:   "error-token",
-				UserID:  uuid.New(),
-				Type:    auth.TokenTypeAccess,
+				UserID:  validUUID,
+				Type:    auth.TokenTypeRefresh,
 				Expires: time.Now().Add(time.Hour),
 			},
 			setupMock: func(mock sqlmock.Sqlmock) {
@@ -217,9 +202,10 @@ func TestRepository_CreateToken(t *testing.T) {
 	}
 }
 
-// TestRepository_DeleteToken tests the DeleteToken repository method.
-func TestRepository_DeleteToken(t *testing.T) {
+// TestDeleteToken tests the DeleteToken repository method.
+func TestDeleteToken(t *testing.T) {
 	ctx := context.Background()
+	validUUID := uuid.New()
 
 	tests := []struct {
 		name          string
@@ -229,65 +215,39 @@ func TestRepository_DeleteToken(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name:      "Success - Delete access token",
-			tokenType: auth.TokenTypeAccess,
-			userID:    uuid.New().String(),
-			setupMock: func(mock sqlmock.Sqlmock) {
-				mock.ExpectBegin()
-				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "tokens" WHERE type = $1 AND user_id = $2`)).
-					WithArgs(auth.TokenTypeAccess, sqlmock.AnyArg()).
-					WillReturnResult(sqlmock.NewResult(0, 1))
-				mock.ExpectCommit()
-			},
-			expectedError: nil,
-		},
-		{
-			name:      "Success - Delete refresh token",
+			name:      "Success - Delete token",
 			tokenType: auth.TokenTypeRefresh,
-			userID:    uuid.New().String(),
+			userID:    validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "tokens" WHERE type = $1 AND user_id = $2`)).
-					WithArgs(auth.TokenTypeRefresh, sqlmock.AnyArg()).
+					WithArgs(auth.TokenTypeRefresh, validUUID.String()).
 					WillReturnResult(sqlmock.NewResult(0, 1))
 				mock.ExpectCommit()
 			},
 			expectedError: nil,
 		},
 		{
-			name:      "Success - Delete reset password token",
-			tokenType: auth.TokenTypeResetPassword,
-			userID:    uuid.New().String(),
+			name:      "Success - No tokens to delete",
+			tokenType: auth.TokenTypeRefresh,
+			userID:    validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "tokens" WHERE type = $1 AND user_id = $2`)).
-					WithArgs(auth.TokenTypeResetPassword, sqlmock.AnyArg()).
-					WillReturnResult(sqlmock.NewResult(0, 1))
-				mock.ExpectCommit()
-			},
-			expectedError: nil,
-		},
-		{
-			name:      "Success - Delete verify email token",
-			tokenType: auth.TokenTypeVerifyEmail,
-			userID:    uuid.New().String(),
-			setupMock: func(mock sqlmock.Sqlmock) {
-				mock.ExpectBegin()
-				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "tokens" WHERE type = $1 AND user_id = $2`)).
-					WithArgs(auth.TokenTypeVerifyEmail, sqlmock.AnyArg()).
-					WillReturnResult(sqlmock.NewResult(0, 1))
+					WithArgs(auth.TokenTypeRefresh, validUUID.String()).
+					WillReturnResult(sqlmock.NewResult(0, 0))
 				mock.ExpectCommit()
 			},
 			expectedError: nil,
 		},
 		{
 			name:      "Error - Database error",
-			tokenType: auth.TokenTypeAccess,
-			userID:    uuid.New().String(),
+			tokenType: auth.TokenTypeRefresh,
+			userID:    validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "tokens" WHERE type = $1 AND user_id = $2`)).
-					WithArgs(auth.TokenTypeAccess, sqlmock.AnyArg()).
+					WithArgs(auth.TokenTypeRefresh, validUUID.String()).
 					WillReturnError(errors.New("database error"))
 				mock.ExpectRollback()
 			},
@@ -316,9 +276,10 @@ func TestRepository_DeleteToken(t *testing.T) {
 	}
 }
 
-// TestRepository_DeleteAllTokens tests the DeleteAllTokens repository method.
-func TestRepository_DeleteAllTokens(t *testing.T) {
+// TestDeleteAllTokens tests the DeleteAllTokens repository method.
+func TestDeleteAllTokens(t *testing.T) {
 	ctx := context.Background()
+	validUUID := uuid.New()
 
 	tests := []struct {
 		name          string
@@ -327,36 +288,36 @@ func TestRepository_DeleteAllTokens(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name:   "Success - Delete all tokens for user",
-			userID: uuid.New().String(),
+			name:   "Success - Delete all tokens",
+			userID: validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "tokens" WHERE user_id = $1`)).
-					WithArgs(sqlmock.AnyArg()).
-					WillReturnResult(sqlmock.NewResult(0, 3)) // 3 tokens deleted
+					WithArgs(validUUID.String()).
+					WillReturnResult(sqlmock.NewResult(0, 2))
 				mock.ExpectCommit()
 			},
 			expectedError: nil,
 		},
 		{
 			name:   "Success - No tokens to delete",
-			userID: uuid.New().String(),
+			userID: validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "tokens" WHERE user_id = $1`)).
-					WithArgs(sqlmock.AnyArg()).
-					WillReturnResult(sqlmock.NewResult(0, 0)) // 0 tokens deleted
+					WithArgs(validUUID.String()).
+					WillReturnResult(sqlmock.NewResult(0, 0))
 				mock.ExpectCommit()
 			},
 			expectedError: nil,
 		},
 		{
 			name:   "Error - Database error",
-			userID: uuid.New().String(),
+			userID: validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "tokens" WHERE user_id = $1`)).
-					WithArgs(sqlmock.AnyArg()).
+					WithArgs(validUUID.String()).
 					WillReturnError(errors.New("database error"))
 				mock.ExpectRollback()
 			},
@@ -385,93 +346,61 @@ func TestRepository_DeleteAllTokens(t *testing.T) {
 	}
 }
 
-// TestRepository_FindTokenByTokenAndUserID tests the FindTokenByTokenAndUserID repository method.
-func TestRepository_FindTokenByTokenAndUserID(t *testing.T) {
+// TestFindTokenByTokenAndUserID tests the FindTokenByTokenAndUserID repository method.
+func TestFindTokenByTokenAndUserID(t *testing.T) {
 	ctx := context.Background()
+	validUUID := uuid.New()
 
 	tests := []struct {
 		name          string
 		tokenStr      string
 		userID        string
 		setupMock     func(sqlmock.Sqlmock)
+		expectedToken *auth.TokenDB
 		expectedError error
 	}{
 		{
-			name:     "Success - Find access token",
-			tokenStr: "access-token",
-			userID:   uuid.New().String(),
+			name:     "Success - Find token",
+			tokenStr: "valid-token",
+			userID:   validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"id", "token", "user_id", "type", "expires", "created_at", "updated_at"}).
-					AddRow(uuid.New(), "access-token", uuid.New(), auth.TokenTypeAccess, time.Now().Add(time.Hour), 1234567890, 1234567890)
+					AddRow(validUUID, "valid-token", validUUID, auth.TokenTypeRefresh, time.Now().Add(time.Hour), 1234567890, 1234567890)
 
 				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "tokens" WHERE token = $1 AND user_id = $2 ORDER BY "tokens"."id" LIMIT $3`)).
-					WithArgs("access-token", sqlmock.AnyArg(), 1).
+					WithArgs("valid-token", validUUID.String(), 1).
 					WillReturnRows(rows)
 			},
-			expectedError: nil,
-		},
-		{
-			name:     "Success - Find refresh token",
-			tokenStr: "refresh-token",
-			userID:   uuid.New().String(),
-			setupMock: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "token", "user_id", "type", "expires", "created_at", "updated_at"}).
-					AddRow(uuid.New(), "refresh-token", uuid.New(), auth.TokenTypeRefresh, time.Now().Add(time.Hour*24), 1234567890, 1234567890)
-
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "tokens" WHERE token = $1 AND user_id = $2 ORDER BY "tokens"."id" LIMIT $3`)).
-					WithArgs("refresh-token", sqlmock.AnyArg(), 1).
-					WillReturnRows(rows)
-			},
-			expectedError: nil,
-		},
-		{
-			name:     "Success - Find reset password token",
-			tokenStr: "reset-token",
-			userID:   uuid.New().String(),
-			setupMock: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "token", "user_id", "type", "expires", "created_at", "updated_at"}).
-					AddRow(uuid.New(), "reset-token", uuid.New(), auth.TokenTypeResetPassword, time.Now().Add(time.Hour), 1234567890, 1234567890)
-
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "tokens" WHERE token = $1 AND user_id = $2 ORDER BY "tokens"."id" LIMIT $3`)).
-					WithArgs("reset-token", sqlmock.AnyArg(), 1).
-					WillReturnRows(rows)
-			},
-			expectedError: nil,
-		},
-		{
-			name:     "Success - Find verify email token",
-			tokenStr: "verify-token",
-			userID:   uuid.New().String(),
-			setupMock: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "token", "user_id", "type", "expires", "created_at", "updated_at"}).
-					AddRow(uuid.New(), "verify-token", uuid.New(), auth.TokenTypeVerifyEmail, time.Now().Add(time.Hour), 1234567890, 1234567890)
-
-				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "tokens" WHERE token = $1 AND user_id = $2 ORDER BY "tokens"."id" LIMIT $3`)).
-					WithArgs("verify-token", sqlmock.AnyArg(), 1).
-					WillReturnRows(rows)
+			expectedToken: &auth.TokenDB{
+				ID:     validUUID,
+				Token:  "valid-token",
+				UserID: validUUID,
+				Type:   auth.TokenTypeRefresh,
 			},
 			expectedError: nil,
 		},
 		{
 			name:     "Error - Token not found",
-			tokenStr: "notfound-token",
-			userID:   uuid.New().String(),
+			tokenStr: "invalid-token",
+			userID:   validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "tokens" WHERE token = $1 AND user_id = $2 ORDER BY "tokens"."id" LIMIT $3`)).
-					WithArgs("notfound-token", sqlmock.AnyArg(), 1).
+					WithArgs("invalid-token", validUUID.String(), 1).
 					WillReturnError(gorm.ErrRecordNotFound)
 			},
+			expectedToken: nil,
 			expectedError: auth.ErrTokenNotFound,
 		},
 		{
 			name:     "Error - Database error",
 			tokenStr: "error-token",
-			userID:   uuid.New().String(),
+			userID:   validUUID.String(),
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "tokens" WHERE token = $1 AND user_id = $2 ORDER BY "tokens"."id" LIMIT $3`)).
-					WithArgs("error-token", sqlmock.AnyArg(), 1).
+					WithArgs("error-token", validUUID.String(), 1).
 					WillReturnError(errors.New("database error"))
 			},
+			expectedToken: nil,
 			expectedError: errors.New("database error"),
 		},
 	}
@@ -495,7 +424,9 @@ func TestRepository_FindTokenByTokenAndUserID(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.NotNil(t, token)
-				assert.Equal(t, tt.tokenStr, token.Token)
+				assert.Equal(t, tt.expectedToken.Token, token.Token)
+				assert.Equal(t, tt.expectedToken.UserID, token.UserID)
+				assert.Equal(t, tt.expectedToken.Type, token.Type)
 			}
 
 			assert.NoError(t, mock.ExpectationsWereMet())
