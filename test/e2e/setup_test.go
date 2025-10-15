@@ -8,8 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
@@ -32,6 +34,10 @@ var (
 	testDB *gorm.DB
 	//nolint:gochecknoglobals // Test globals are acceptable for test setup
 	baseURL string
+	//nolint:gochecknoglobals // container reference for cleanup
+	mailpitContainer testcontainers.Container
+	//nolint:gochecknoglobals // cached Mailpit HTTP base URL for API queries
+	mailpitHTTPBaseURL string
 )
 
 // TestMain sets up the test environment with a PostgreSQL container.
@@ -112,11 +118,12 @@ func TestMain(m *testing.M) {
 			ResetPasswordExpMin: 15,
 			VerifyEmailExpMin:   15,
 		},
+		// SMTP will be overridden after Mailpit container is started
 		SMTP: config.SMTPConfig{
-			Host:     "localhost",
-			Port:     587,
-			Username: "test",
-			Password: "test",
+			Host:     "",
+			Port:     0,
+			Username: "",
+			Password: "",
 			From:     "test@example.com",
 		},
 		OAuth: config.OAuthConfig{
@@ -135,6 +142,53 @@ func TestMain(m *testing.M) {
 	if migrationErr := database.RunMigrations(testDB); migrationErr != nil {
 		panic(fmt.Sprintf("Failed to run migrations: %v", migrationErr))
 	}
+
+	// Start Mailpit container for SMTP + HTTP API assertions
+	// Image docs: https://hub.docker.com/r/axllent/mailpit
+	mailpitReq := testcontainers.ContainerRequest{
+		Image:        "axllent/mailpit:latest",
+		ExposedPorts: []string{"1025/tcp", "8025/tcp"},
+		WaitingFor: wait.ForAll(
+			wait.ForListeningPort("1025/tcp").WithStartupTimeout(30*time.Second),
+			wait.ForListeningPort("8025/tcp").WithStartupTimeout(30*time.Second),
+		),
+	}
+
+	var errMailpit error
+	mailpitContainer, errMailpit = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: mailpitReq,
+		Started:          true,
+	})
+	if errMailpit != nil {
+		panic(fmt.Sprintf("Failed to start mailpit container: %v", errMailpit))
+	}
+
+	mailpitHost, err := mailpitContainer.Host(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get mailpit host: %v", err))
+	}
+	smtpPort, err := mailpitContainer.MappedPort(ctx, "1025")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get mailpit SMTP port: %v", err))
+	}
+	httpPort, err := mailpitContainer.MappedPort(ctx, "8025")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get mailpit HTTP port: %v", err))
+	}
+
+	// Wire SMTP config to Mailpit
+	cfg.SMTP.Host = mailpitHost
+	cfg.SMTP.Port = smtpPort.Int()
+	cfg.SMTP.Username = "" // Mailpit does not require auth
+	cfg.SMTP.Password = ""
+
+	// Build HTTP base URL for Mailpit API
+	// Ensure IPv6 or hostname formats are bracketed if necessary
+	hostForURL := mailpitHost
+	if ip := net.ParseIP(mailpitHost); ip != nil && ip.To4() == nil {
+		hostForURL = "[" + mailpitHost + "]"
+	}
+	mailpitHTTPBaseURL = fmt.Sprintf("http://%s:%d", hostForURL, httpPort.Int())
 
 	// Create test server
 	testServer = server.New(cfg, testDB)
@@ -160,6 +214,10 @@ func TestMain(m *testing.M) {
 	if terminateErr := postgresContainer.Terminate(ctx); terminateErr != nil {
 		// Log error but don't fail the test
 		_ = terminateErr
+	}
+
+	if mailpitContainer != nil {
+		_ = mailpitContainer.Terminate(ctx)
 	}
 
 	// Change back to original directory before exit
@@ -265,4 +323,223 @@ func cleanupTestData() {
 	// Clean up test data - delete in order to respect foreign key constraints
 	testDB.Exec("DELETE FROM tokens")
 	testDB.Exec("DELETE FROM users WHERE email LIKE '%@example.com'")
+}
+
+// fetchMailpitMessages retrieves messages from Mailpit HTTP API.
+func fetchMailpitMessages() ([]map[string]interface{}, error) {
+	if mailpitHTTPBaseURL == "" {
+		return nil, fmt.Errorf("mailpit not initialized")
+	}
+	req, err := http.NewRequest(http.MethodGet, mailpitHTTPBaseURL+"/api/v1/messages", nil)
+	if err != nil {
+		return nil, err
+	}
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var payload struct {
+		Messages []map[string]interface{} `json:"messages"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+	return payload.Messages, nil
+}
+
+// waitForMail blocks until at least one message exists for the given recipient.
+func waitForMail(toContains string, subjectContains string, timeout time.Duration) (map[string]interface{}, error) {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		msgs, err := fetchMailpitMessages()
+		if err == nil {
+			for _, m := range msgs {
+				// Mailpit API fields: "To" can be an array of objects or strings depending on version
+				subject, _ := m["Subject"].(string)
+
+				matchesTo := toContains == ""
+				if !matchesTo {
+					if toArr, ok := m["To"].([]interface{}); ok {
+						for _, item := range toArr {
+							switch v := item.(type) {
+							case string:
+								if containsFold(v, toContains) {
+									matchesTo = true
+								}
+							case map[string]interface{}:
+								if email, _ := v["Address"].(string); email != "" && containsFold(email, toContains) {
+									matchesTo = true
+								}
+								if email, _ := v["Email"].(string); email != "" && containsFold(email, toContains) {
+									matchesTo = true
+								}
+							}
+							if matchesTo {
+								break
+							}
+						}
+					} else if toStr, ok := m["To"].(string); ok {
+						matchesTo = containsFold(toStr, toContains)
+					}
+				}
+
+				matchesSubject := subjectContains == "" || (subject != "" && containsFold(subject, subjectContains))
+
+				if matchesTo && matchesSubject {
+					return m, nil
+				}
+			}
+		}
+		time.Sleep(300 * time.Millisecond)
+	}
+	return nil, fmt.Errorf("mail not received for recipient=%s subject~=%s within %s", toContains, subjectContains, timeout)
+}
+
+// getMailTextBody fetches full message body (text) from Mailpit.
+func getMailTextBody(id string) (string, error) { // kept for backwards-compat usage
+	// Try to read full message JSON first to get the most reliable body
+	body, err := getMailBodyAny(id)
+	if err == nil && body != "" {
+		return body, nil
+	}
+
+	// Fallback to /body.txt endpoint
+	req, err := http.NewRequest(http.MethodGet, mailpitHTTPBaseURL+"/api/v1/message/"+id+"/body.txt", nil)
+	if err != nil {
+		return "", err
+	}
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// getMailBodyAny tries message JSON (Text and HTML) before falling back to empty.
+func getMailBodyAny(id string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, mailpitHTTPBaseURL+"/api/v1/message/"+id, nil)
+	if err != nil {
+		return "", err
+	}
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	var payload map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return "", err
+	}
+	if text, ok := payload["Text"].(map[string]interface{}); ok {
+		if b, _ := text["Body"].(string); b != "" {
+			return b, nil
+		}
+	}
+	if html, ok := payload["HTML"].(map[string]interface{}); ok {
+		if b, _ := html["Body"].(string); b != "" {
+			return b, nil
+		}
+	}
+	return "", nil
+}
+
+// getMailHTMLBody fetches HTML body when available
+func getMailHTMLBody(id string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, mailpitHTTPBaseURL+"/api/v1/message/"+id+"/body.html", nil)
+	if err != nil {
+		return "", err
+	}
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// extractTokenFromMessage attempts to extract token from multiple message sources
+func extractTokenFromMessage(id string) (string, error) {
+	// Try JSON fields first
+	if body, err := getMailBodyAny(id); err == nil {
+		if tok, ok := tryExtractToken(body); ok {
+			return tok, nil
+		}
+	}
+	// Then plain text endpoint
+	if body, err := getMailTextBody(id); err == nil {
+		if tok, ok := tryExtractToken(body); ok {
+			return tok, nil
+		}
+	}
+	// Then HTML endpoint
+	if body, err := getMailHTMLBody(id); err == nil {
+		if tok, ok := tryExtractToken(body); ok {
+			return tok, nil
+		}
+	}
+
+	// Finally, search entire message JSON dump
+	req, err := http.NewRequest(http.MethodGet, mailpitHTTPBaseURL+"/api/v1/message/"+id, nil)
+	if err == nil {
+		client := &http.Client{Timeout: 5 * time.Second}
+		if resp, err := client.Do(req); err == nil {
+			defer resp.Body.Close()
+			b, _ := io.ReadAll(resp.Body)
+			if tok, ok := tryExtractToken(string(b)); ok {
+				return tok, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("token not found in email body")
+}
+
+func tryExtractToken(body string) (string, bool) {
+	// Look for token param in URLs, tolerant to HTML encoding
+	patterns := []string{
+		`token=([A-Za-z0-9._-]+)`,     // plain
+		`token&#61;([A-Za-z0-9._-]+)`, // HTML encoded '='
+		`token%3D([A-Za-z0-9._-]+)`,   // URL-encoded '='
+	}
+	for _, p := range patterns {
+		re := regexp.MustCompile(p)
+		if m := re.FindStringSubmatch(body); len(m) >= 2 {
+			return m[1], true
+		}
+	}
+	return "", false
+}
+
+// extractTokenFromBody finds token query param in a URL within the email body.
+func extractTokenFromBody(body string) (string, error) {
+	re := regexp.MustCompile(`token=([A-Za-z0-9._-]+)`) // JWT-like
+	m := re.FindStringSubmatch(body)
+	if len(m) >= 2 {
+		return m[1], nil
+	}
+	return "", fmt.Errorf("token not found in email body")
+}
+
+// containsFold is case-insensitive substring check.
+func containsFold(s, substr string) bool {
+	return indexFold(s, substr) >= 0
+}
+
+// indexFold returns index of substr in s, case-insensitive.
+func indexFold(s, substr string) int {
+	return bytes.Index(bytes.ToLower([]byte(s)), bytes.ToLower([]byte(substr)))
 }
